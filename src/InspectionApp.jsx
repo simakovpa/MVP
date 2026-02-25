@@ -171,113 +171,113 @@ const INSTRUMENTS = [
 const SUBDIVISIONS = [
   {
     title: 'филиал Алейские МЭС',
-    key: 'филиал Алейские МЭС',
+    value: 'филиал Алейские МЭС',
     children: [
-      { title: 'Алейский РЭС', key: 'Алейский РЭС' },
-      { title: 'Калманский участок', key: 'Калманский участок' },
-      { title: 'Мамонтовский участок', key: 'Мамонтовский участок' },
-      { title: 'Ребрихинский участок', key: 'Ребрихинский участок' },
-      { title: 'Романовский участок', key: 'Романовский участок' },
-      { title: 'Топчихинский участок', key: 'Топчихинский участок' },
-      { title: 'Усть-Калманский участок', key: 'Усть-Калманский участок' },
-      { title: 'Усть-Пристанский участок', key: 'Усть-Пристанский участок' },
-      { title: 'Чарышский участок', key: 'Чарышский участок' }
+      { title: 'Алейский РЭС', value: 'Алейский РЭС' },
+      { title: 'Калманский участок', value: 'Калманский участок' },
+      { title: 'Мамонтовский участок', value: 'Мамонтовский участок' },
+      { title: 'Ребрихинский участок', value: 'Ребрихинский участок' },
+      { title: 'Романовский участок', value: 'Романовский участок' },
+      { title: 'Топчихинский участок', value: 'Топчихинский участок' },
+      { title: 'Усть-Калманский участок', value: 'Усть-Калманский участок' },
+      { title: 'Усть-Пристанский участок', value: 'Усть-Пристанский участок' },
+      { title: 'Чарышский участок', value: 'Чарышский участок' }
     ]
   },
   {
     title: 'филиал Белокурихинские МЭС',
-    key: 'филиал Белокурихинские МЭС',
+    value: 'филиал Белокурихинские МЭС',
     children: [
-      { title: 'Алтайский участок', key: 'Алтайский участок' },
-      { title: 'Белокурихинский участок', key: 'Белокурихинский участок' },
-      { title: 'Быстроистокский участок', key: 'Быстроистокский участок' },
-      { title: 'Петропавловский участок', key: 'Петропавловский участок' },
-      { title: 'Смоленский участок', key: 'Смоленский участок' },
-      { title: 'Советский участок', key: 'Советский участок' },
-      { title: 'Солонешенский участок', key: 'Солонешенский участок' }
+      { title: 'Алтайский участок', value: 'Алтайский участок' },
+      { title: 'Белокурихинский участок', value: 'Белокурихинский участок' },
+      { title: 'Быстроистокский участок', value: 'Быстроистокский участок' },
+      { title: 'Петропавловский участок', value: 'Петропавловский участок' },
+      { title: 'Смоленский участок', value: 'Смоленский участок' },
+      { title: 'Советский участок', value: 'Советский участок' },
+      { title: 'Солонешенский участок', value: 'Солонешенский участок' }
     ]
   },
   {
     title: 'филиал Бийские МЭС',
-    key: 'филиал Бийские МЭС',
+    value: 'филиал Бийские МЭС',
     children: [
-      { title: 'Акутихинский участок', key: 'Акутихинский участок' },
-      { title: 'Ельцовский участок', key: 'Ельцовский участок' },
-      { title: 'Зональный участок', key: 'Зональный участок' },
-      { title: 'Красногорский участок', key: 'Красногорский участок' },
-      { title: 'Солтонский участок', key: 'Солтонский участок' },
-      { title: 'Целинный участок', key: 'Целинный участок' }
+      { title: 'Акутихинский участок', value: 'Акутихинский участок' },
+      { title: 'Ельцовский участок', value: 'Ельцовский участок' },
+      { title: 'Зональный участок', value: 'Зональный участок' },
+      { title: 'Красногорский участок', value: 'Красногорский участок' },
+      { title: 'Солтонский участок', value: 'Солтонский участок' },
+      { title: 'Целинный участок', value: 'Целинный участок' }
     ]
   },
   {
     title: 'филиал Змеиногорские МЭС',
-    key: 'филиал Змеиногорские МЭС',
+    value: 'филиал Змеиногорские МЭС',
     children: [
-      { title: 'Горняцкий участок', key: 'Горняцкий участок' },
-      { title: 'Змеиногорский участок', key: 'Змеиногорский участок' },
-      { title: 'Краснощековский участок', key: 'Краснощековский участок' },
-      { title: 'Курьинский участок', key: 'Курьинский участок' },
-      { title: 'Староалейский участок', key: 'Староалейский участок' }
+      { title: 'Горняцкий участок', value: 'Горняцкий участок' },
+      { title: 'Змеиногорский участок', value: 'Змеиногорский участок' },
+      { title: 'Краснощековский участок', value: 'Краснощековский участок' },
+      { title: 'Курьинский участок', value: 'Курьинский участок' },
+      { title: 'Староалейский участок', value: 'Староалейский участок' }
     ]
   },
   {
     title: 'филиал Каменские МЭС',
-    key: 'филиал Каменские МЭС',
+    value: 'филиал Каменские МЭС',
     children: [
-      { title: 'Баевский участок', key: 'Баевский участок' },
-      { title: 'Каменский РЭС', key: 'Каменский РЭС' },
-      { title: 'Крутихинский участок', key: 'Крутихинский участок' },
-      { title: 'Панкрушихинский участок', key: 'Панкрушихинский участок' },
-      { title: 'Тюменцевский участок', key: 'Тюменцевский участок' },
-      { title: 'Шелаболихинский участок', key: 'Шелаболихинский участок' }
+      { title: 'Баевский участок', value: 'Баевский участок' },
+      { title: 'Каменский РЭС', value: 'Каменский РЭС' },
+      { title: 'Крутихинский участок', value: 'Крутихинский участок' },
+      { title: 'Панкрушихинский участок', value: 'Панкрушихинский участок' },
+      { title: 'Тюменцевский участок', value: 'Тюменцевский участок' },
+      { title: 'Шелаболихинский участок', value: 'Шелаболихинский участок' }
     ]
   },
   {
     title: 'филиал Кулундинские МЭС',
-    key: 'филиал Кулундинские МЭС',
+    value: 'филиал Кулундинские МЭС',
     children: [
-      { title: 'Благовещенский участок', key: 'Благовещенский участок' },
-      { title: 'Завьяловский участок', key: 'Завьяловский участок' },
-      { title: 'Ключевой участок', key: 'Ключевой участок' },
-      { title: 'Кулундинский участок', key: 'Кулундинский участок' },
-      { title: 'Михайловский участок', key: 'Михайловский участок' },
-      { title: 'Родинский участок', key: 'Родинский участок' },
-      { title: 'Табунский участок', key: 'Табунский участок' },
-      { title: 'участок Степное Озеро', key: 'участок Степное Озеро' }
+      { title: 'Благовещенский участок', value: 'Благовещенский участок' },
+      { title: 'Завьяловский участок', value: 'Завьяловский участок' },
+      { title: 'Ключевой участок', value: 'Ключевой участок' },
+      { title: 'Кулундинский участок', value: 'Кулундинский участок' },
+      { title: 'Михайловский участок', value: 'Михайловский участок' },
+      { title: 'Родинский участок', value: 'Родинский участок' },
+      { title: 'Табунский участок', value: 'Табунский участок' },
+      { title: 'участок Степное Озеро', value: 'участок Степное Озеро' }
     ]
   },
   {
     title: 'филиал Новоалтайские МЭС',
-    key: 'филиал Новоалтайские МЭС',
+    value: 'филиал Новоалтайские МЭС',
     children: [
-      { title: 'Косихинский РЭС', key: 'Косихинский РЭС' },
-      { title: 'Новоалтайский РЭС', key: 'Новоалтайский РЭС' },
-      { title: 'Тальменский участок', key: 'Тальменский участок' },
-      { title: 'Троицкого РЭС', key: 'Троицкого РЭС' }
+      { title: 'Косихинский РЭС', value: 'Косихинский РЭС' },
+      { title: 'Новоалтайский РЭС', value: 'Новоалтайский РЭС' },
+      { title: 'Тальменский участок', value: 'Тальменский участок' },
+      { title: 'Троицкого РЭС', value: 'Троицкого РЭС' }
     ]
   },
   {
     title: 'филиал Рубцовские МЭС',
-    key: 'филиал Рубцовские МЭС',
+    value: 'филиал Рубцовские МЭС',
     children: [
-      { title: 'Волчихинский участок', key: 'Волчихинский участок' },
-      { title: 'Новичихинский участок', key: 'Новичихинский участок' },
-      { title: 'Новоегорьевский участок', key: 'Новоегорьевский участок' },
-      { title: 'Поспелихинский участок', key: 'Поспелихинский участок' },
-      { title: 'Рубцовский РЭС', key: 'Рубцовский РЭС' },
-      { title: 'Угловский участок', key: 'Угловский участок' },
-      { title: 'Шипуновский участок', key: 'Шипуновский участок' }
+      { title: 'Волчихинский участок', value: 'Волчихинский участок' },
+      { title: 'Новичихинский участок', value: 'Новичихинский участок' },
+      { title: 'Новоегорьевский участок', value: 'Новоегорьевский участок' },
+      { title: 'Поспелихинский участок', value: 'Поспелихинский участок' },
+      { title: 'Рубцовский РЭС', value: 'Рубцовский РЭС' },
+      { title: 'Угловский участок', value: 'Угловский участок' },
+      { title: 'Шипуновский участок', value: 'Шипуновский участок' }
     ]
   },
   {
     title: 'филиал Славгородские МЭС',
-    key: 'филиал Славгородские МЭС',
+    value: 'филиал Славгородские МЭС',
     children: [
-      { title: 'Бурлинский участок', key: 'Бурлинский участок' },
-      { title: 'Верх-Суетский участок', key: 'Верх-Суетский участок' },
-      { title: 'Гальбштадтский участок', key: 'Гальбштадтский участок' },
-      { title: 'Славгородский участок', key: 'Славгородский участок' },
-      { title: 'Хабарский участок', key: 'Хабарский участок' }
+      { title: 'Бурлинский участок', value: 'Бурлинский участок' },
+      { title: 'Верх-Суетский участок', value: 'Верх-Суетский участок' },
+      { title: 'Гальбштадтский участок', value: 'Гальбштадтский участок' },
+      { title: 'Славгородский участок', value: 'Славгородский участок' },
+      { title: 'Хабарский участок', value: 'Хабарский участок' }
     ]
   }
 ];
@@ -285,114 +285,114 @@ const SUBDIVISIONS = [
 // Дерево подразделений для заказчика (из файла Подразделения.txt)
 const CUSTOMERS_TREE = [
   {
+    value: 'филиал Алейские МЭС',
     title: 'филиал Алейские МЭС',
-    key: 'филиал Алейские МЭС',
     children: [
-      { title: 'Алейский РЭС', key: 'Алейский РЭС' },
-      { title: 'Калманский участок', key: 'Калманский участок' },
-      { title: 'Мамонтовский участок', key: 'Мамонтовский участок' },
-      { title: 'Ребрихинский участок', key: 'Ребрихинский участок' },
-      { title: 'Романовский участок', key: 'Романовский участок' },
-      { title: 'Топчихинский участок', key: 'Топчихинский участок' },
-      { title: 'Усть-Калманский участок', key: 'Усть-Калманский участок' },
-      { title: 'Усть-Пристанский участок', key: 'Усть-Пристанский участок' },
-      { title: 'Чарышский участок', key: 'Чарышский участок' }
+      { title: 'Алейский РЭС', value: 'Алейский РЭС' },
+      { title: 'Калманский участок', value: 'Калманский участок' },
+      { title: 'Мамонтовский участок', value: 'Мамонтовский участок' },
+      { title: 'Ребрихинский участок', value: 'Ребрихинский участок' },
+      { title: 'Романовский участок', value: 'Романовский участок' },
+      { title: 'Топчихинский участок', value: 'Топчихинский участок' },
+      { title: 'Усть-Калманский участок', value: 'Усть-Калманский участок' },
+      { title: 'Усть-Пристанский участок', value: 'Усть-Пристанский участок' },
+      { title: 'Чарышский участок', value: 'Чарышский участок' }
     ]
   },
   {
     title: 'филиал Белокурихинские МЭС',
-    key: 'филиал Белокурихинские МЭС',
+    value: 'филиал Белокурихинские МЭС',
     children: [
-      { title: 'Алтайский участок', key: 'Алтайский участок' },
-      { title: 'Белокурихинский участок', key: 'Белокурихинский участок' },
-      { title: 'Быстроистокский участок', key: 'Быстроистокский участок' },
-      { title: 'Петропавловский участок', key: 'Петропавловский участок' },
-      { title: 'Смоленский участок', key: 'Смоленский участок' },
-      { title: 'Советский участок', key: 'Советский участок' },
-      { title: 'Солонешенский участок', key: 'Солонешенский участок' }
+      { title: 'Алтайский участок', value: 'Алтайский участок' },
+      { title: 'Белокурихинский участок', value: 'Белокурихинский участок' },
+      { title: 'Быстроистокский участок', value: 'Быстроистокский участок' },
+      { title: 'Петропавловский участок', value: 'Петропавловский участок' },
+      { title: 'Смоленский участок', value: 'Смоленский участок' },
+      { title: 'Советский участок', value: 'Советский участок' },
+      { title: 'Солонешенский участок', value: 'Солонешенский участок' }
     ]
   },
   {
     title: 'филиал Бийские МЭС',
-    key: 'филиал Бийские МЭС',
+    value: 'филиал Бийские МЭС',
     children: [
-      { title: 'Акутихинский участок', key: 'Акутихинский участок' },
-      { title: 'Ельцовский участок', key: 'Ельцовский участок' },
-      { title: 'Зональный участок', key: 'Зональный участок' },
-      { title: 'Красногорский участок', key: 'Красногорский участок' },
-      { title: 'Солтонский участок', key: 'Солтонский участок' },
-      { title: 'Целинный участок', key: 'Целинный участок' }
+      { title: 'Акутихинский участок', value: 'Акутихинский участок' },
+      { title: 'Ельцовский участок', value: 'Ельцовский участок' },
+      { title: 'Зональный участок', value: 'Зональный участок' },
+      { title: 'Красногорский участок', value: 'Красногорский участок' },
+      { title: 'Солтонский участок', value: 'Солтонский участок' },
+      { title: 'Целинный участок', value: 'Целинный участок' }
     ]
   },
   {
     title: 'филиал Змеиногорские МЭС',
-    key: 'филиал Змеиногорские МЭС',
+    value: 'филиал Змеиногорские МЭС',
     children: [
-      { title: 'Горняцкий участок', key: 'Горняцкий участок' },
-      { title: 'Змеиногорский участок', key: 'Змеиногорский участок' },
-      { title: 'Краснощековский участок', key: 'Краснощековский участок' },
-      { title: 'Курьинский участок', key: 'Курьинский участок' },
-      { title: 'Староалейский участок', key: 'Староалейский участок' }
+      { title: 'Горняцкий участок', value: 'Горняцкий участок' },
+      { title: 'Змеиногорский участок', value: 'Змеиногорский участок' },
+      { title: 'Краснощековский участок', value: 'Краснощековский участок' },
+      { title: 'Курьинский участок', value: 'Курьинский участок' },
+      { title: 'Староалейский участок', value: 'Староалейский участок' }
     ]
   },
   {
     title: 'филиал Каменские МЭС',
-    key: 'филиал Каменские МЭС',
+    value: 'филиал Каменские МЭС',
     children: [
-      { title: 'Баевский участок', key: 'Баевский участок' },
-      { title: 'Каменский РЭС', key: 'Каменский РЭС' },
-      { title: 'Крутихинский участок', key: 'Крутихинский участок' },
-      { title: 'Панкрушихинский участок', key: 'Панкрушихинский участок' },
-      { title: 'Тюменцевский участок', key: 'Тюменцевский участок' },
-      { title: 'Шелаболихинский участок', key: 'Шелаболихинский участок' }
+      { title: 'Баевский участок', value: 'Баевский участок' },
+      { title: 'Каменский РЭС', value: 'Каменский РЭС' },
+      { title: 'Крутихинский участок', value: 'Крутихинский участок' },
+      { title: 'Панкрушихинский участок', value: 'Панкрушихинский участок' },
+      { title: 'Тюменцевский участок', value: 'Тюменцевский участок' },
+      { title: 'Шелаболихинский участок', value: 'Шелаболихинский участок' }
     ]
   },
   {
     title: 'филиал Кулундинские МЭС',
-    key: 'филиал Кулундинские МЭС',
+    value: 'филиал Кулундинские МЭС',
     children: [
-      { title: 'Благовещенский участок', key: 'Благовещенский участок' },
-      { title: 'Завьяловский участок', key: 'Завьяловский участок' },
-      { title: 'Ключевой участок', key: 'Ключевой участок' },
-      { title: 'Кулундинский участок', key: 'Кулундинский участок' },
-      { title: 'Михайловский участок', key: 'Михайловский участок' },
-      { title: 'Родинский участок', key: 'Родинский участок' },
-      { title: 'Табунский участок', key: 'Табунский участок' },
-      { title: 'участок Степное Озеро', key: 'участок Степное Озеро' }
+      { title: 'Благовещенский участок', value: 'Благовещенский участок' },
+      { title: 'Завьяловский участок', value: 'Завьяловский участок' },
+      { title: 'Ключевой участок', value: 'Ключевой участок' },
+      { title: 'Кулундинский участок', value: 'Кулундинский участок' },
+      { title: 'Михайловский участок', value: 'Михайловский участок' },
+      { title: 'Родинский участок', value: 'Родинский участок' },
+      { title: 'Табунский участок', value: 'Табунский участок' },
+      { title: 'участок Степное Озеро', value: 'участок Степное Озеро' }
     ]
   },
   {
     title: 'филиал Новоалтайские МЭС',
-    key: 'филиал Новоалтайские МЭС',
+    value: 'филиал Новоалтайские МЭС',
     children: [
-      { title: 'Косихинский РЭС', key: 'Косихинский РЭС' },
-      { title: 'Новоалтайский РЭС', key: 'Новоалтайский РЭС' },
-      { title: 'Тальменский участок', key: 'Тальменский участок' },
-      { title: 'Троицкого РЭС', key: 'Троицкого РЭС' }
+      { title: 'Косихинский РЭС', value: 'Косихинский РЭС' },
+      { title: 'Новоалтайский РЭС', value: 'Новоалтайский РЭС' },
+      { title: 'Тальменский участок', value: 'Тальменский участок' },
+      { title: 'Троицкого РЭС', value: 'Троицкого РЭС' }
     ]
   },
   {
     title: 'филиал Рубцовские МЭС',
-    key: 'филиал Рубцовские МЭС',
+    value: 'филиал Рубцовские МЭС',
     children: [
-      { title: 'Волчихинский участок', key: 'Волчихинский участок' },
-      { title: 'Новичихинский участок', key: 'Новичихинский участок' },
-      { title: 'Новоегорьевский участок', key: 'Новоегорьевский участок' },
-      { title: 'Поспелихинский участок', key: 'Поспелихинский участок' },
-      { title: 'Рубцовский РЭС', key: 'Рубцовский РЭС' },
-      { title: 'Угловский участок', key: 'Угловский участок' },
-      { title: 'Шипуновский участок', key: 'Шипуновский участок' }
+      { title: 'Волчихинский участок', value: 'Волчихинский участок' },
+      { title: 'Новичихинский участок', value: 'Новичихинский участок' },
+      { title: 'Новоегорьевский участок', value: 'Новоегорьевский участок' },
+      { title: 'Поспелихинский участок', value: 'Поспелихинский участок' },
+      { title: 'Рубцовский РЭС', value: 'Рубцовский РЭС' },
+      { title: 'Угловский участок', value: 'Угловский участок' },
+      { title: 'Шипуновский участок', value: 'Шипуновский участок' }
     ]
   },
   {
     title: 'филиал Славгородские МЭС',
-    key: 'филиал Славгородские МЭС',
+    value: 'филиал Славгородские МЭС',
     children: [
-      { title: 'Бурлинский участок', key: 'Бурлинский участок' },
-      { title: 'Верх-Суетский участок', key: 'Верх-Суетский участок' },
-      { title: 'Гальбштадтский участок', key: 'Гальбштадтский участок' },
-      { title: 'Славгородский участок', key: 'Славгородский участок' },
-      { title: 'Хабарский участок', key: 'Хабарский участок' }
+      { title: 'Бурлинский участок', value: 'Бурлинский участок' },
+      { title: 'Верх-Суетский участок', value: 'Верх-Суетский участок' },
+      { title: 'Гальбштадтский участок', value: 'Гальбштадтский участок' },
+      { title: 'Славгородский участок', value: 'Славгородский участок' },
+      { title: 'Хабарский участок', value: 'Хабарский участок' }
     ]
   }
 ];
@@ -473,9 +473,9 @@ const INITIAL_PROTOCOLS_DATA = [
             id: '1',
             name: 'Опорный блок',
             characteristics: [
-              { id: '6', name: 'Уровень загнивания', actualValue: '', status: '' },
-              { id: '7', name: 'Диаметр ствола', actualValue: '', status: '' },
-              { id: '8', name: 'Высота опоры', actualValue: '', status: '' }
+              { id: '6', name: 'Уровень загнивания', actualValue: '10', status: 'conforms' },
+              { id: '7', name: 'Диаметр ствола', actualValue: '25', status: 'conforms' },
+              { id: '8', name: 'Высота опоры', actualValue: '11', status: 'conforms' }
             ]
           }
         ],
@@ -761,7 +761,7 @@ const WorksScreen = ({ onBack, workTypes: initialWorkTypes, onUpdate }) => {
       render: (blocks) => blocks.reduce((sum, block) => sum + block.characteristics.length, 0)
     },
     {
-      title: 'Действия',
+      title: '',
       key: 'actions',
       width: '5%',
       render: (_, record) => (
@@ -951,7 +951,7 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
   const [editingProtocol, setEditingProtocol] = useState(null);
   const [form] = Form.useForm();
   const [selectedWorkTypes, setSelectedWorkTypes] = useState([]);
-
+  
   // Открыть модалку для создания
   const showCreateModal = () => {
     setEditingProtocol(null);
@@ -959,37 +959,10 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
     setSelectedWorkTypes([]);
     setIsModalVisible(true);
   };
-
-  // Открыть модалку для редактирования
-  const showEditModal = (record) => {
-    setEditingProtocol(record);
-    // Найти все выбранные работы для редактирования
-    const selectedWorks = workTypes.filter(w => record.workTypes.includes(w.name));
-    setSelectedWorkTypes(selectedWorks);
-    
-    form.setFieldsValue({
-      ...record,
-      date: dayjs(record.date),
-      workTypes: record.workTypes,
-      workData: record.workData || []
-    });
-    setIsModalVisible(true);
-  };
-
-  // Закрыть модалку
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    setEditingProtocol(null);
-    setSelectedWorkTypes([]);
-  };
-
-  // Обработка выбора видов работ
-  const handleWorkTypesChange = (values) => {
-    const selectedWorks = workTypes.filter(w => values.includes(w.name));
-    setSelectedWorkTypes(selectedWorks);
-    
-    // Создать структуру данных для выбранных работ
-    const workData = selectedWorks.map(work => {
+  
+  // Функция для создания структуры workData по выбранным видам работ
+  const createWorkDataStructure = (selectedWorks) => {
+    return selectedWorks.map(work => {
       // Создать условия для работы
       const conditions = {};
       work.conditions.forEach(cond => {
@@ -1014,20 +987,40 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
         measurementType: work.measurementType,
         conditions,
         blocks,
-        // Для единичного оборудования добавляем поле для выбора оборудования
         equipment: work.measurementType === 'single' ? null : undefined,
-        // Для нескольких технических мест добавляем массив с местами
         technicalLocations: work.measurementType === 'multiple' ? [] : undefined
       };
     });
-
-    form.setFieldsValue({
-      workData
-    });
   };
+
+  // Открыть модалку для редактирования
+  const showEditModal = (record) => {
+    setEditingProtocol(record);
+    // Найти все выбранные работы для редактирования
+    const selectedWorks = workTypes.filter(w => record.workTypes.includes(w.name));
+    setSelectedWorkTypes(selectedWorks);
+    
+    form.setFieldsValue({
+      ...record,
+      date: dayjs(record.date)
+    });
+    setIsModalVisible(true);
+  };
+
+
+
+  // Закрыть модалку
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setEditingProtocol(null);
+    setSelectedWorkTypes([]);
+  };
+
+
 
   // Сохранить протокол (создание или редактирование)
   const handleSave = (values) => {
+    console.log('Сохранение протокола:', values);
     if (editingProtocol) {
       // Редактирование существующего протокола
       const updatedProtocols = protocols.map(protocol => 
@@ -1047,7 +1040,7 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
     }
     setIsModalVisible(false);
     setEditingProtocol(null);
-    setSelectedWorkType(null);
+    setSelectedWorkTypes([]);
   };
 
   // Удалить протокол
@@ -1107,7 +1100,7 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
       width: '10%'
     },
     {
-      title: 'Действия',
+      title: '',
       key: 'actions',
       width: '15%',
       render: (_, record) => (
@@ -1298,7 +1291,15 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
                 <Select 
                   mode="multiple" 
                   placeholder="Выберите виды работ" 
-                  onChange={handleWorkTypesChange}
+                  onChange={(values) => {
+                    const selectedWorks = workTypes.filter(w => values.includes(w.name));
+                    setSelectedWorkTypes(selectedWorks);
+                    // Только для создания нового протокола и только при первом выборе работ
+                    if (!editingProtocol && form.getFieldValue('workData').length === 0) {
+                      const workData = createWorkDataStructure(selectedWorks);
+                      form.setFieldsValue({ workData });
+                    }
+                  }}
                 >
                   {workTypes.map(type => (
                     <Select.Option key={type.name} value={type.name}>
@@ -1313,20 +1314,18 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
           {/* Отображение выбранных работ с условиями и характеристиками */}
           {selectedWorkTypes.length > 0 && (
             <Form.Item
-              name="workData"
               label="Данные работ"
-              rules={[{ required: true, message: 'Пожалуйста, заполните данные работ' }]}
             >
-              {form.getFieldValue('workData')?.map((workData, workIndex) => (
-                <div key={workData.id} style={{ marginBottom: 32 }}>
-                  <h3 style={{ marginBottom: 16, color: '#1890ff' }}>{workData.name}</h3>
+              {selectedWorkTypes.map((work, workIndex) => (
+                <div key={work.key} style={{ marginBottom: 32 }}>
+                  <h3 style={{ marginBottom: 16, color: '#1890ff' }}>{work.name}</h3>
                   
                   {/* Условия измерений для работы */}
-                  {selectedWorkTypes[workIndex]?.conditions.length > 0 && (
+                  {work.conditions.length > 0 && (
                     <>
                       <h4 style={{ marginBottom: 12 }}>Условия измерений</h4>
                       <Row gutter={[16, 16]}>
-                        {selectedWorkTypes[workIndex].conditions.map(condition => (
+                        {work.conditions.map(condition => (
                           <Col xs={24} sm={12} md={8} key={condition.id}>
                             <Form.Item
                               name={['workData', workIndex, 'conditions', condition.id]}
@@ -1342,7 +1341,7 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
                   )}
 
                   {/* Выбор оборудования для единичного типа измерений */}
-                  {workData.measurementType === 'single' && (
+                  {work.measurementType === 'single' && (
                     <Form.Item
                       name={['workData', workIndex, 'equipment']}
                       label="Оборудование"
@@ -1359,123 +1358,86 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
                   )}
 
                   {/* Результаты измерений для работы */}
-                  {workData.blocks.length > 0 && (
+                  {work.blocks.length > 0 && (
                     <>
                       <h4 style={{ marginBottom: 12 }}>Результаты измерений</h4>
                       
-                      {/* Для нескольких технических мест - отображение с добавлением новых мест */}
-                      {workData.measurementType === 'multiple' ? (
+                      {/* Для нескольких технических мест - статический отображение */}
+                      {work.measurementType === 'multiple' ? (
                         <>
-                          <Form.List name={['workData', workIndex, 'technicalLocations']}>
-                            {(fields, { add, remove }) => (
-                              <>
-                                {fields.map((field, locationIndex) => (
-                                  <div key={field.key} style={{ marginBottom: 16 }}>
-                                    <Form.Item
-                                      {...field}
-                                      name={[field.name, 'name']}
-                                      label="Техническое место"
-                                      rules={[{ required: true, message: 'Пожалуйста, выберите техническое место' }]}
-                                    >
-                                      <Select placeholder="Выберите техническое место">
-                                        {TECHNICAL_LOCATIONS.map(location => (
-                                          <Select.Option key={location} value={location}>
-                                            {location}
-                                          </Select.Option>
-                                        ))}
-                                      </Select>
-                                    </Form.Item>
-                                    
-                                    {workData.blocks.map((block, blockIndex) => (
-                                      <Collapse key={block.id} defaultActiveKey={[block.id]} style={{ marginBottom: 16 }}>
-                                        <Collapse.Panel header={block.name} key={block.id}>
-                                          <Table
-                                            columns={[
-                                              {
-                                                title: 'Характеристика',
-                                                dataIndex: 'name',
-                                                key: 'name',
-                                                width: '40%'
-                                              },
-                                              {
-                                                title: 'Фактическое значение',
-                                                dataIndex: 'actualValue',
-                                                key: 'actualValue',
-                                                width: '30%',
-                                                render: (text, record) => (
-                                                  <Form.Item
-                                                    name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.key, 'actualValue']}
-                                                    noStyle
-                                                  >
-                                                    <Input placeholder="Введите значение" />
-                                                  </Form.Item>
-                                                )
-                                              },
-                                              {
-                                                title: 'Статус',
-                                                dataIndex: 'status',
-                                                key: 'status',
-                                                width: '30%',
-                                                render: (text, record) => (
-                                                  <Form.Item
-                                                    name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.key, 'status']}
-                                                    noStyle
-                                                  >
-                                                    <Select placeholder="Выберите статус">
-                                                      <Select.Option value="conforms">Соответствует НТД</Select.Option>
-                                                      <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
-                                                    </Select>
-                                                  </Form.Item>
-                                                )
-                                              }
-                                            ]}
-                                            dataSource={block.characteristics}
-                                            bordered
-                                            pagination={false}
-                                            rowKey="id"
-                                          />
-                                        </Collapse.Panel>
-                                      </Collapse>
-                                    ))}
-                                    
-                                    <Button 
-                                      type="text" 
-                                      danger 
-                                      onClick={() => remove(field.name)}
-                                      style={{ marginLeft: 8 }}
-                                    >
-                                      Удалить техническое место
-                                    </Button>
-                                  </div>
-                                ))}
-                                <Form.Item>
-                                  <Button 
-                                    type="dashed" 
-                                    onClick={() => add({ 
-                                      blocks: workData.blocks.map(block => ({
-                                        id: block.id,
-                                        name: block.name,
-                                        characteristics: block.characteristics.map(char => ({
-                                          id: char.id,
-                                          name: char.name,
-                                          actualValue: '',
-                                          status: ''
-                                        }))
-                                      }))
-                                    })} 
-                                    block 
-                                    icon={<PlusOutlined />}
-                                  >
-                                    Добавить техническое место
-                                  </Button>
-                                </Form.Item>
-                              </>
-                            )}
-                          </Form.List>
+                          {Array.from({ length: 1 }).map((_, locationIndex) => (
+                            <div key={locationIndex} style={{ marginBottom: 16 }}>
+                              <Form.Item
+                                name={['workData', workIndex, 'technicalLocations', locationIndex, 'name']}
+                                label="Техническое место"
+                                rules={[{ required: true, message: 'Пожалуйста, выберите техническое место' }]}
+                              >
+                                <Select placeholder="Выберите техническое место">
+                                  {TECHNICAL_LOCATIONS.map(location => (
+                                    <Select.Option key={location} value={location}>
+                                      {location}
+                                    </Select.Option>
+                                  ))}
+                                </Select>
+                              </Form.Item>
+                              
+                              {work.blocks.map((block, blockIndex) => (
+                                <Collapse key={block.id} defaultActiveKey={[block.id]} style={{ marginBottom: 16 }}>
+                                  <Collapse.Panel header={block.name} key={block.id}>
+                                    <Table
+                                      columns={[
+                                        {
+                                          title: 'Характеристика',
+                                          dataIndex: 'name',
+                                          key: 'name',
+                                          width: '40%'
+                                        },
+                                        {
+                                          title: 'Фактическое значение',
+                                          dataIndex: 'actualValue',
+                                          key: 'actualValue',
+                                          width: '30%',
+                                          render: (text, record) => (
+                                            <Form.Item
+                                              name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.id, 'actualValue']}
+                                              noStyle
+                                            >
+                                              <Input placeholder="Введите значение" />
+                                            </Form.Item>
+                                          )
+                                        },
+                                        {
+                                          title: 'Статус',
+                                          dataIndex: 'status',
+                                          key: 'status',
+                                          width: '30%',
+                                          render: (text, record) => (
+                                            <Form.Item
+                                              name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.id, 'status']}
+                                              noStyle
+                                            >
+                                              <Select placeholder="Выберите статус">
+                                                <Select.Option value="conforms">Соответствует НТД</Select.Option>
+                                                <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
+                                              </Select>
+                                            </Form.Item>
+                                          )
+                                        }
+                                      ]}
+                                      dataSource={block.characteristics}
+                                      bordered
+                                      pagination={false}
+                                      rowKey="id"
+                                    />
+                                  </Collapse.Panel>
+                                </Collapse>
+                              ))}
+                            </div>
+                          ))}
                         </>
                       ) : (
                         // Для единичного оборудования - обычное отображение блоков
-                        workData.blocks.map((block, blockIndex) => (
+                        work.blocks.map((block, blockIndex) => (
                           <Collapse key={block.id} defaultActiveKey={[block.id]} style={{ marginBottom: 16 }}>
                             <Collapse.Panel header={block.name} key={block.id}>
                               <Table
@@ -1491,31 +1453,31 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
                                     dataIndex: 'actualValue',
                                     key: 'actualValue',
                                     width: '30%',
-                                    render: (text, record) => (
-                                      <Form.Item
-                                        name={['workData', workIndex, 'blocks', blockIndex, 'characteristics', record.key, 'actualValue']}
-                                        noStyle
-                                      >
-                                        <Input placeholder="Введите значение" />
-                                      </Form.Item>
-                                    )
+                                      render: (text, record) => (
+                                        <Form.Item
+                                          name={['workData', workIndex, 'blocks', blockIndex, 'characteristics', record.id, 'actualValue']}
+                                          noStyle
+                                        >
+                                          <Input placeholder="Введите значение" />
+                                        </Form.Item>
+                                      )
                                   },
                                   {
                                     title: 'Статус',
                                     dataIndex: 'status',
                                     key: 'status',
                                     width: '30%',
-                                    render: (text, record) => (
-                                      <Form.Item
-                                        name={['workData', workIndex, 'blocks', blockIndex, 'characteristics', record.key, 'status']}
-                                        noStyle
-                                      >
-                                        <Select placeholder="Выберите статус">
-                                          <Select.Option value="conforms">Соответствует НТД</Select.Option>
-                                          <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
-                                        </Select>
-                                      </Form.Item>
-                                    )
+                                      render: (text, record) => (
+                                        <Form.Item
+                                          name={['workData', workIndex, 'blocks', blockIndex, 'characteristics', record.id, 'status']}
+                                          noStyle
+                                        >
+                                          <Select placeholder="Выберите статус">
+                                            <Select.Option value="conforms">Соответствует НТД</Select.Option>
+                                            <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
+                                          </Select>
+                                        </Form.Item>
+                                      )
                                   }
                                 ]}
                                 dataSource={block.characteristics}
