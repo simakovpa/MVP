@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование приложения</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1890ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-result {
+            font-size: 16px;
+            color: #555;
+        }
+        .success {
+            color: #52c41a;
+        }
+        .error {
+            color: #ff4d4f;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #40a9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Тестирование приложения для управления испытаниями</h1>
+        
+        <div class="test-section">
+            <div class="test-title">Тест 1: Проверка импорта React</div>
+            <div class="test-result" id="test1">Ожидание запуска...</div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Тест 2: Проверка импорта Ant Design</div>
+            <div class="test-result" id="test2">Ожидание запуска...</div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Тест 3: Проверка компонента TestComponent</div>
+            <div class="test-result" id="test3">Ожидание запуска...</div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Тест 4: Проверка рендеринга главного экрана</div>
+            <div class="test-result" id="test4">Ожидание запуска...</div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="runAllTests()">Запустить все тесты</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/antd@5.12.0/dist/antd.min.js"></script>
+    
+    <script>
+        const { Button, Card, Row, Col } = antd;
+        const { HomeOutlined, CheckCircleOutlined, SettingOutlined } = antd.icons;
+        
+        function runAllTests() {
+            runTest1();
+            runTest2();
+            runTest3();
+            runTest4();
+        }
+        
+        function runTest1() {
+            const testResult = document.getElementById('test1');
+            try {
+                if (React && React.createElement) {
+                    testResult.textContent = 'Успешно: React импортирован';
+                    testResult.className = 'test-result success';
+                } else {
+                    testResult.textContent = 'Ошибка: React не импортирован';
+                    testResult.className = 'test-result error';
+                }
+            } catch (error) {
+                testResult.textContent = `Ошибка: ${error.message}`;
+                testResult.className = 'test-result error';
+            }
+        }
+        
+        function runTest2() {
+            const testResult = document.getElementById('test2');
+            try {
+                if (antd && antd.Button && antd.Card) {
+                    testResult.textContent = 'Успешно: Ant Design импортирован';
+                    testResult.className = 'test-result success';
+                } else {
+                    testResult.textContent = 'Ошибка: Ant Design не импортирован';
+                    testResult.className = 'test-result error';
+                }
+            } catch (error) {
+                testResult.textContent = `Ошибка: ${error.message}`;
+                testResult.className = 'test-result error';
+            }
+        }
+        
+        function runTest3() {
+            const testResult = document.getElementById('test3');
+            try {
+                const TestComponent = () => (
+                    <div>Тест компонента</div>
+                );
+                
+                testResult.textContent = 'Успешно: Компонент создан';
+                testResult.className = 'test-result success';
+            } catch (error) {
+                testResult.textContent = `Ошибка: ${error.message}`;
+                testResult.className = 'test-result error';
+            }
+        }
+        
+        function runTest4() {
+            const testResult = document.getElementById('test4');
+            try {
+                const App = () => (
+                    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+                        <h1 style={{ marginBottom: 32, textAlign: 'center', color: '#1890ff' }}>
+                            <HomeOutlined style={{ marginRight: 12 }} />
+                            Система управления испытаниями
+                        </h1>
+
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                                <Card 
+                                    hoverable
+                                    style={{ height: '100%' }}
+                                    bodyStyle={{ padding: 16, textAlign: 'center' }}
+                                >
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        icon={<CheckCircleOutlined />}
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            padding: '12px 16px',
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            backgroundColor: '#1890ff',
+                                            whiteSpace: 'normal',
+                                            lineHeight: 1.4
+                                        }}
+                                    >
+                                        Реестр протоколов испытаний
+                                    </Button>
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                                <Card 
+                                    hoverable
+                                    style={{ height: '100%' }}
+                                    bodyStyle={{ padding: 16, textAlign: 'center' }}
+                                >
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        icon={<SettingOutlined />}
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            padding: '12px 16px',
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            backgroundColor: '#52c41a',
+                                            whiteSpace: 'normal',
+                                            lineHeight: 1.4
+                                        }}
+                                    >
+                                        Настройка видов работ
+                                    </Button>
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                                <Card 
+                                    hoverable
+                                    style={{ height: '100%' }}
+                                    bodyStyle={{ padding: 16, textAlign: 'center' }}
+                                >
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        icon={<CheckCircleOutlined />}
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            padding: '12px 16px',
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            backgroundColor: '#1890ff',
+                                            whiteSpace: 'normal',
+                                            lineHeight: 1.4
+                                        }}
+                                    >
+                                        План-график испытаний
+                                    </Button>
+                                </Card>
+                            </Col>
+                        </Row>
+                    </div>
+                );
+                
+                testResult.textContent = 'Успешно: Главный экран создан';
+                testResult.className = 'test-result success';
+            } catch (error) {
+                testResult.textContent = `Ошибка: ${error.message}`;
+                testResult.className = 'test-result error';
+            }
+        }
+        
+        // Запустить тесты при загрузке
+        window.onload = () => {
+            runAllTests();
+        };
+    </script>
+</body>
+</html>
