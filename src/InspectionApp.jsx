@@ -1397,31 +1397,31 @@ const ProtocolsScreen = ({ onBack, etlData, workTypes }) => {
                                           dataIndex: 'actualValue',
                                           key: 'actualValue',
                                           width: '30%',
-                                          render: (text, record) => (
-                                            <Form.Item
-                                              name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.id, 'actualValue']}
-                                              noStyle
-                                            >
-                                              <Input placeholder="Введите значение" />
-                                            </Form.Item>
-                                          )
+                                           render: (text, record, charIndex) => (
+                                             <Form.Item
+                                               name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', charIndex, 'actualValue']}
+                                               noStyle
+                                             >
+                                               <Input placeholder="Введите значение" />
+                                             </Form.Item>
+                                           )
                                         },
                                         {
                                           title: 'Статус',
                                           dataIndex: 'status',
                                           key: 'status',
                                           width: '30%',
-                                          render: (text, record) => (
-                                            <Form.Item
-                                              name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', record.id, 'status']}
-                                              noStyle
-                                            >
-                                              <Select placeholder="Выберите статус">
-                                                <Select.Option value="conforms">Соответствует НТД</Select.Option>
-                                                <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
-                                              </Select>
-                                            </Form.Item>
-                                          )
+                                           render: (text, record, charIndex) => (
+                                             <Form.Item
+                                               name={['workData', workIndex, 'technicalLocations', locationIndex, 'blocks', blockIndex, 'characteristics', charIndex, 'status']}
+                                               noStyle
+                                             >
+                                               <Select placeholder="Выберите статус">
+                                                 <Select.Option value="conforms">Соответствует НТД</Select.Option>
+                                                 <Select.Option value="notConforms">Не соответствует НТД</Select.Option>
+                                               </Select>
+                                             </Form.Item>
+                                           )
                                         }
                                       ]}
                                       dataSource={block.characteristics}
