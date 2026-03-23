@@ -1,8 +1,10 @@
 import { useState } from "react";
 import {
   Form, Input, Select, TreeSelect, Row, Col, Card, Button, Space,
-  InputNumber, Alert, Divider, Table, Tag, Tooltip, Typography, Steps, Breadcrumb
+  InputNumber, Alert, Divider, Table, Tag, Tooltip, Typography, Steps, Breadcrumb,
+  DatePicker
 } from "antd";
+import dayjs from "dayjs";
 import { PlusOutlined, HomeOutlined, WarningOutlined } from "@ant-design/icons";
 import {
   OBJECTS, EQUIP_ON_OBJECTS, TM_ON_OBJECTS, NOMENCLATURES, EQUIP_TYPES,
@@ -277,8 +279,10 @@ export default function CreateProtocol({
               />
             </Form.Item>
 
-            <Form.Item label="Дата измерений" name="date_measured">
-              <Input type="date"/>
+            <Form.Item label="Дата измерений" name="date_measured"
+              getValueProps={v => ({ value: v ? dayjs(v) : null })}
+              getValueFromEvent={d => d ? d.format("YYYY-MM-DD") : null}>
+              <DatePicker format="DD.MM.YYYY" style={{ width:"100%" }} placeholder="Выберите дату"/>
             </Form.Item>
 
             <div style={{ display:"flex", justifyContent:"space-between" }}>

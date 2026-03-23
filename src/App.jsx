@@ -4,7 +4,7 @@ import {
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, ControlOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined, SafetyCertificateOutlined
 } from "@ant-design/icons";
 import {
   INIT_PROTOCOLS, INIT_NORM_RANGES, INIT_PASSPORT_NORMS,
@@ -14,7 +14,7 @@ import { uid, genNum, nowStr } from "./utils/helpers";
 import ProtocolList    from "./screens/ProtocolList";
 import ProtocolCard    from "./screens/ProtocolCard";
 import CreateProtocol  from "./screens/CreateProtocol";
-import NormativesScreen from "./screens/NormativesScreen";
+import NormativesScreen, { LabsScreen } from "./screens/NormativesScreen";
 import InstrumentsScreen from "./screens/InstrumentsScreen";
 
 const { Sider, Content } = Layout;
@@ -53,6 +53,11 @@ export default function App() {
 
   const activeProt   = protocols.find(p => p.id === activeProtId);
   const newNomCount  = nomenclatures.filter(n => !n.accepted).length;
+  const expiredLabsCount = labs.filter(l => {
+    if (!l.exp) return false;
+    return new Date(l.exp) <= new Date();
+  }).length;
+
   const expiredCount = instruments.filter(i => {
     if (i.archived || !i.date_next_cal) return false;
     return new Date(i.date_next_cal) <= new Date();
@@ -70,6 +75,8 @@ export default function App() {
     { type:"divider" },
     { key:"instruments", icon:<ThunderboltOutlined/>,
       label:<span>Приборы {expiredCount>0 && <Badge count={expiredCount} size="small" style={{ marginLeft:4 }}/>}</span> },
+    { key:"labs",        icon:<SafetyCertificateOutlined/>,
+      label:<span>ЭТЛ {expiredLabsCount>0 && <Badge count={expiredLabsCount} size="small" style={{ marginLeft:4 }}/>}</span> },
     { key:"normatives",  icon:<ControlOutlined/>,
       label:<span>Нормативы {newNomCount>0 && <Badge count={newNomCount} size="small" style={{ marginLeft:4 }}/>}</span> },
   ];
@@ -79,6 +86,7 @@ export default function App() {
     else if (key==="protocols")   nav("list","protocols");
     else if (key==="normatives")  nav("normatives","normatives");
     else if (key==="instruments") nav("instruments","instruments");
+    else if (key==="labs")        nav("labs","labs");
   }
 
   return (
@@ -152,6 +160,9 @@ export default function App() {
             )}
             {screen==="instruments" && (
               <InstrumentsScreen instruments={instruments} setInstruments={setInstruments}/>
+            )}
+            {screen==="labs" && (
+              <LabsScreen labs={labs} setLabs={setLabs}/>
             )}
           </Content>
         </Layout>

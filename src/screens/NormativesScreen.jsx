@@ -368,6 +368,23 @@ function TabETL({ labs, setLabs, api }) {
   );
 }
 
+// ─── Экспортируемый экран ЭТЛ ───────────────────────────────────────────────
+export function LabsScreen({ labs, setLabs }) {
+  const [api, ctx] = notification.useNotification();
+  return (
+    <div style={{ padding:24 }}>
+      {ctx}
+      <div style={{ marginBottom:20 }}>
+        <span style={{ fontSize:18, fontWeight:700, color:"#0f2744" }}>
+          <span style={{ marginRight:10, color:"#1a5fa8" }}>🏛</span>
+          Реестр электротехнических лабораторий
+        </span>
+      </div>
+      <TabETL labs={labs} setLabs={setLabs} api={api}/>
+    </div>
+  );
+}
+
 // ─── Главный компонент ────────────────────────────────────────────────────────
 export default function NormativesScreen({
   normRanges, setNormRanges,
