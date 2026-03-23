@@ -2,19 +2,21 @@ import { useState } from "react";
 import {
   Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  InputNumber, notification
+  InputNumber, notification, Divider
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
   BugOutlined, SafetyCertificateOutlined, ApartmentOutlined, ThunderboltOutlined,
   WarningOutlined, SwapOutlined, QuestionCircleOutlined, CalendarOutlined,
-  TeamOutlined, ToolOutlined
+  TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined
 } from "@ant-design/icons";
 import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel } from "../data/mockData";
 import {
   getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus
 } from "../utils/helpers";
 import { StatusTag, RowStatusBadge, NormSourceBadge, CalTag } from "../components/shared";
+import ProtocolPreview from "./ProtocolPreview";
+import ProtocolPrintPreview from "../components/ProtocolPrintPreview";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -43,7 +45,9 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const [cancelModal, setCancelModal]         = useState(false);
   const [cancelReason, setCancelReason]       = useState("");
   const [defectModal, setDefectModal]         = useState(false);
+  const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
+  const [printModal, setPrintModal]           = useState(false);
   const [manualVal, setManualVal]             = useState("");
   const [manualReason, setManualReason]       = useState("");
 
@@ -236,10 +240,12 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             {prot.status==="Подписан" && (
               <Button danger icon={<StopOutlined/>} onClick={() => setCancelModal(true)}>Аннулировать</Button>
             )}
+            <Button icon={<EyeOutlined/>} onClick={() => setPreviewOpen(true)}>Превью</Button>
             {prot.status!=="Аннулирован" && (
               <Button icon={<BugOutlined/>} style={{ borderColor:"#cf1322",color:"#cf1322" }}
                 onClick={() => setDefectModal(true)}>Создать дефект</Button>
             )}
+            <Button icon={<PrinterOutlined/>} onClick={() => setPrintModal(true)}>Печатная форма</Button>
           </Space>
         </div>
         {prot.status==="Аннулирован" && prot.cancel_reason &&
@@ -436,6 +442,27 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           message="Дефект будет создан с привязкой к протоколу и объекту."/>
         <Text type="secondary" style={{ fontSize:12 }}>Объект: {obj?.name}</Text>
       </Modal>
+
+
+      {/* ─── Модал печатной формы ─────────────────────────────────────── */}
+      <Modal
+        open={printModal}
+        onCancel={() => setPrintModal(false)}
+        footer={null}
+        width={860}
+        title={<Space><PrinterOutlined/><span>Печатная форма протокола</span></Space>}
+        styles={{ body: { padding: 0 } }}
+      >
+        <ProtocolPrintPreview prot={prot} workTypes={workTypes} instruments={instruments}/>
+      </Modal>
+
+      <ProtocolPreview
+        prot={prot}
+        workTypes={workTypes}
+        instruments={instruments}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
 
       <style>{`
         .row-err td { background: #fff2f0 !important; }
