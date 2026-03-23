@@ -93,12 +93,14 @@ export default function App() {
     <ConfigProvider theme={theme}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-        body { margin:0; }
+        html, body, #root { margin:0; width:100%; height:100%; }
+        * { box-sizing: border-box; }
+        .ant-layout { width: 100% !important; }
         ::-webkit-scrollbar { width:5px; height:5px; }
         ::-webkit-scrollbar-thumb { background:#c1ccd9; border-radius:3px; }
       `}</style>
-      <Layout style={{ minHeight:"100vh" }}>
-        <Sider width={220} style={{ position:"sticky", top:0, height:"100vh", overflow:"auto" }}>
+      <Layout style={{ minHeight:"100vh", width:"100%", display:"flex" }}>
+        <Sider width={220} collapsible={false} style={{ position:"sticky", top:0, height:"100vh", overflow:"auto", flexShrink:0 }}>
           {/* Логотип */}
           <div style={{ padding:"16px 14px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)",
             display:"flex", alignItems:"center", gap:10 }}>
@@ -130,8 +132,8 @@ export default function App() {
           </div>
         </Sider>
 
-        <Layout>
-          <Content style={{ background:"#f0f2f5", minHeight:"100vh" }}>
+        <Layout style={{ flex:1, minWidth:0, overflow:"hidden" }}>
+          <Content style={{ background:"#f0f2f5", minHeight:"100vh", overflow:"auto" }}>
             {screen==="list" && (
               <ProtocolList
                 protocols={protocols} workTypes={workTypes} params={params} instruments={instruments}

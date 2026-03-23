@@ -37,6 +37,68 @@ const statusCfgStep = {
 const ENV_LABELS = { temp:"Температура", humidity:"Влажность", pressure:"Давление" };
 const ENV_UNITS  = { temp:"°C", humidity:"%", pressure:"мм рт. ст." };
 
+
+// ─── EquipListTable — плоская таблица с шапками-разделителями по ТМЦ ─────────
+function EquipListTable({ prot, makeRowCols }) {
+  const groups = prot.equip_groups || [];
+  if (groups.length === 0) return (
+    <Empty description="Единицы оборудования не добавлены" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
+  );
+
+  // Берём колонки из первой группы (все одинаковые)
+  const cols = makeRowCols(0);
+
+  return (
+    <div>
+      {groups.map((g, gi) => {
+        const hasError = g.rows.some(r => {
+          const s = getEffectiveStatus(r);
+          return s.color === "error";
+        });
+        const hasWarn = g.rows.some(r => {
+          const s = getEffectiveStatus(r);
+          return s.color === "warning";
+        });
+        return (
+          <div key={g.equip_id} style={{ marginBottom: 12 }}>
+            {/* Шапка-разделитель — как в Excel-протоколе */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "6px 12px",
+              background: "linear-gradient(90deg, #f0f4f8, #f8fafc)",
+              border: "1px solid #dde3ec",
+              borderRadius: "6px 6px 0 0",
+              borderBottom: "none",
+            }}>
+              <ThunderboltOutlined style={{ color: "#1a5fa8", fontSize: 13 }}/>
+              <Text strong style={{ fontSize: 13 }}>{g.equip_name}</Text>
+              {g.serial && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  Зав. № {g.serial}
+                </Text>
+              )}
+              {hasError && <Tag color="error"   style={{ fontSize: 10, marginLeft: "auto" }}>Отклонение</Tag>}
+              {!hasError && hasWarn && <Tag color="warning" style={{ fontSize: 10, marginLeft: "auto" }}>Требует внимания</Tag>}
+            </div>
+            <Table
+              dataSource={g.rows}
+              columns={makeRowCols(gi)}
+              rowKey="id"
+              size="small"
+              pagination={false}
+              style={{ borderRadius: "0 0 6px 6px" }}
+              rowClassName={r => {
+                const s = getEffectiveStatus(r);
+                return s.color==="error" ? "row-err" : s.color==="warning" ? "row-warn-row" : "";
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ProtocolCard({ prot, workTypes, params, instruments, onBack, onUpdate }) {
   const [api, ctx] = notification.useNotification();
   const [conclusionModal, setConclusionModal] = useState(false);
@@ -62,9 +124,9 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const hasExpired = hasExpiredInstruments(prot, instruments);
 
   function getAllRows() {
-    return prot.mode==="tm_list"
-      ? (prot.tm_groups||[]).flatMap(g=>g.rows)
-      : (prot.rows||[]);
+    if (prot.mode==="tm_list") return (prot.tm_groups||[]).flatMap(g=>g.rows);
+    if (prot.mode==="equip_list") return (prot.equip_groups||[]).flatMap(g=>g.rows);
+    return (prot.rows||[]);
   }
 
   function updateRowField(rowId, field, value, tmIdx=null) {
@@ -76,7 +138,8 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       return newRow;
     };
     if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
-    else updated.tm_groups = prot.tm_groups.map((g,gi) => gi!==tmIdx ? g : {...g,rows:g.rows.map(upd)});
+    else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi) => gi!==tmIdx ? g : {...g,rows:g.rows.map(upd)});
+    else updated.tm_groups = (prot.tm_groups||[]).map((g,gi) => gi!==tmIdx ? g : {...g,rows:g.rows.map(upd)});
     onUpdate(updated);
   }
 
@@ -88,6 +151,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       : {...row, manual_status:manualVal, manual_reason:manualReason, is_overridden:true};
     const updated = {...prot};
     if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
+    else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
     else updated.tm_groups = prot.tm_groups.map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
     updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
       action:`Статус строки переопределён: «${manualVal}» — ${manualReason}` }];
@@ -152,6 +216,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   }
 
   const undefinedCount = getAllRows().filter(r=>getEffectiveStatus(r).undefined).length;
+  // getAllRows уже учитывает equip_groups через режим
   const badCount       = countBadRows(prot);
 
   return (
@@ -177,7 +242,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
                 {prot.test_type}
               </Tag>
               <Tag style={{ background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#cde" }}>
-                {prot.mode==="equipment" ? "Единичное оборудование" : "Перечень ТМ"}
+                {prot.mode==="equipment" ? "Единичное оборудование" : prot.mode==="equip_list" ? "Перечень ТМЦ" : "Перечень ТМ"}
               </Tag>
               {badCount>0 && <Tag color="warning" icon={<WarningOutlined/>}>{badCount} строк с отклонениями</Tag>}
               {undefinedCount>0 && <Tag icon={<QuestionCircleOutlined/>}>{undefinedCount} без норматива</Tag>}
@@ -261,23 +326,28 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           key:"rows", label:"Результаты измерений",
           children:(
             <Card size="small" style={{ borderRadius:8 }}>
-              {prot.mode==="equipment"
-                ? <Table dataSource={prot.rows} columns={makeRowCols()} rowKey="id" size="small" pagination={false}
-                    rowClassName={r=>{ const s=getEffectiveStatus(r); return s.color==="error"?"row-err":s.color==="warning"?"row-warn-row":""; }}/>
-                : <Collapse defaultActiveKey={(prot.tm_groups||[]).map((_,i)=>String(i))} size="small">
-                    {(prot.tm_groups||[]).map((g,gi)=>(
-                      <Panel key={String(gi)} header={
-                        <Space>
-                          <ApartmentOutlined style={{ color:"#1a5fa8" }}/>
-                          <Text strong style={{ fontSize:13 }}>{g.tm_name}</Text>
-                          {g.rows.some(r=>getEffectiveStatus(r).color==="error") &&
-                            <Tag color="error" style={{ fontSize:10 }}>Отклонение</Tag>}
-                        </Space>}>
-                        <Table dataSource={g.rows} columns={makeRowCols(gi)} rowKey="id" size="small" pagination={false}/>
-                      </Panel>
-                    ))}
-                  </Collapse>
-              }
+              {prot.mode==="equipment" && (
+                <Table dataSource={prot.rows||[]} columns={makeRowCols()} rowKey="id" size="small" pagination={false}
+                  rowClassName={r=>{ const s=getEffectiveStatus(r); return s.color==="error"?"row-err":s.color==="warning"?"row-warn-row":""; }}/>
+              )}
+              {prot.mode==="tm_list" && (
+                <Collapse defaultActiveKey={(prot.tm_groups||[]).map((_,i)=>String(i))} size="small" style={{ borderRadius:8 }}>
+                  {(prot.tm_groups||[]).map((g,gi)=>(
+                    <Panel key={String(gi)} header={
+                      <Space>
+                        <ApartmentOutlined style={{ color:"#1a5fa8" }}/>
+                        <Text strong style={{ fontSize:13 }}>{g.tm_name}</Text>
+                        {g.rows.some(r=>getEffectiveStatus(r).color==="error") &&
+                          <Tag color="error" style={{ fontSize:10 }}>Отклонение</Tag>}
+                      </Space>}>
+                      <Table dataSource={g.rows} columns={makeRowCols(gi)} rowKey="id" size="small" pagination={false}/>
+                    </Panel>
+                  ))}
+                </Collapse>
+              )}
+              {prot.mode==="equip_list" && (
+                <EquipListTable prot={prot} makeRowCols={makeRowCols}/>
+              )}
             </Card>
           )
         },

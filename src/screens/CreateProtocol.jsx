@@ -43,7 +43,8 @@ export default function CreateProtocol({
   const [objId, setObjId]     = useState(null);
   const [wtId, setWtId]       = useState(null);
   const [equipId, setEquipId] = useState(null);
-  const [selTMs, setSelTMs]   = useState([]);
+  const [selTMs, setSelTMs]     = useState([]);
+  const [selEquips, setSelEquips] = useState([]); // режим equip_list
   const [executorIds, setExecIds]   = useState([]);
   const [reviewerId, setReviewerId] = useState(null);
   const [instrIds, setInstrIds]     = useState([]);
@@ -58,7 +59,11 @@ export default function CreateProtocol({
   const activeInstruments = instruments.filter(i => !i.archived);
 
   const can1 = objId && wtId && mode;
-  const can2 = (mode === "equipment" ? !!equipId : selTMs.length > 0) && executorIds.length > 0 && deptId;
+  const can2 = (
+    mode === "equipment"  ? !!equipId :
+    mode === "equip_list" ? selEquips.length > 0 :
+    selTMs.length > 0
+  ) && executorIds.length > 0 && deptId;
 
   function handleFinish() {
     const vals = form.getFieldsValue(true);
@@ -74,6 +79,25 @@ export default function CreateProtocol({
           zones, norm_source:source, fact:null, note:"",
           auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
       });
+    } else if (mode === "equip_list" && wt) {
+      // Группы по единицам оборудования — шапка-разделитель + строки параметров
+      // Норматив ищется для каждой единицы отдельно по цепочке приоритетов
+      const equip_groups = selEquips.map(eqId => {
+        const eq = equipList.find(e => e.id === eqId);
+        return {
+          equip_id: eqId,
+          equip_name: eq?.name || eqId,
+          serial: eq?.serial || "",
+          rows: wt.params.map(pt => {
+            const pr = params.find(p => p.id === pt.param_id);
+            const { zones, source } = findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, params);
+            return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
+              zones, norm_source:source, fact:null, note:"",
+              auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
+          })
+        };
+      });
+      // equip_groups передаётся отдельным полем в newProt ниже
     } else if (mode === "tm_list" && wt) {
       tm_groups = selTMs.map(tmId => {
         const tm = tmList.find(t => t.id === tmId);
@@ -102,6 +126,23 @@ export default function CreateProtocol({
       executor_ids:executorIds, reviewer_id:reviewerId,
       instrument_ids:instrIds,
       mode, equip_id:mode==="equipment" ? equipId : null,
+      equip_groups:mode==="equip_list" ? (() => {
+        return selEquips.map(eqId => {
+          const eq = equipList.find(e => e.id === eqId);
+          return {
+            equip_id: eqId,
+            equip_name: eq?.name || eqId,
+            serial: eq?.serial || "",
+            rows: wt.params.map(pt => {
+              const pr = params.find(p => p.id === pt.param_id);
+              const { zones, source } = findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, params);
+              return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
+                zones, norm_source:source, fact:null, note:"",
+                auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
+            })
+          };
+        });
+      })() : undefined,
       env:envData, voltage_test:vals.voltage_test || null,
       status:"Черновик", date_signed:null, signed_by:null,
       conclusion_type:null, conclusion_text:"", cancel_reason:null, defects:[],
@@ -113,7 +154,7 @@ export default function CreateProtocol({
   }
 
   return (
-    <div style={{ padding:24, maxWidth:780, margin:"0 auto" }}>
+    <div style={{ padding:24 }}>
       <Breadcrumb style={{ marginBottom:16 }} items={[
         { title:<span style={{ cursor:"pointer", color:"#1a5fa8" }} onClick={onCancel}><HomeOutlined/> Протоколы</span> },
         { title:"Создание" },
@@ -152,8 +193,9 @@ export default function CreateProtocol({
                 <Form.Item label={<b>Режим протокола *</b>}>
                   <div style={{ display:"flex", gap:12 }}>
                     {[
-                      { v:"equipment", label:"Единичное оборудование", desc:"Один ТМЦ" },
-                      { v:"tm_list",   label:"Перечень ТМ объекта",    desc:"Несколько ТМ" },
+                      { v:"equipment",  label:"Единичное оборудование",    desc:"Один ТМЦ" },
+                      { v:"equip_list", label:"Перечень единиц оборудования", desc:"Несколько ТМЦ одного типа" },
+                      { v:"tm_list",    label:"Перечень ТМ объекта",       desc:"По техническим местам" },
                     ].map(m => (
                       <div key={m.v} onClick={() => setMode(m.v)} style={{
                         flex:1, padding:"12px 16px", borderRadius:8, cursor:"pointer",
@@ -179,7 +221,7 @@ export default function CreateProtocol({
         {step === 1 && (
           <Card style={{ borderRadius:8 }}>
             {/* Оборудование / ТМ */}
-            {mode === "equipment" ? (
+            {mode === "equipment" && (
               <Form.Item label={<b>Единица оборудования *</b>}>
                 {equipList.length===0
                   ? <Alert type="warning" message="На объекте нет зарегистрированного оборудования"/>
@@ -189,7 +231,23 @@ export default function CreateProtocol({
                       </Option>)}
                     </Select>}
               </Form.Item>
-            ) : (
+            )}
+            {mode === "equip_list" && (
+              <Form.Item label={<b>Единицы оборудования *</b>}
+                extra={<span style={{ fontSize:11,color:"#888" }}>Выберите несколько ТМЦ одного типа — например, ОПН трёх фаз</span>}>
+                {equipList.length===0
+                  ? <Alert type="warning" message="На объекте нет зарегистрированного оборудования"/>
+                  : <Select mode="multiple" value={selEquips} onChange={setSelEquips} size="large" style={{ width:"100%" }}>
+                      {equipList.map(e=><Option key={e.id} value={e.id}>
+                        <div style={{ display:"flex", justifyContent:"space-between" }}>
+                          <span>{e.name}</span>
+                          <span style={{ fontSize:11,color:"#888",marginLeft:8 }}>{e.serial}</span>
+                        </div>
+                      </Option>)}
+                    </Select>}
+              </Form.Item>
+            )}
+            {mode === "tm_list" && (
               <Form.Item label={<b>Технические места *</b>}>
                 <Select mode="multiple" value={selTMs} onChange={setSelTMs} size="large" style={{ width:"100%" }}>
                   {tmList.map(t=><Option key={t.id} value={t.id}>{t.name}</Option>)}

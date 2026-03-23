@@ -171,7 +171,11 @@ export default function ProtocolPreview({ prot, workTypes, instruments, open, on
   // Строки измерений
   const allRows = prot.mode === "tm_list"
     ? (prot.tm_groups || []).flatMap(g =>
-        g.rows.map(r => ({ ...r, tm_name: g.tm_name }))
+        g.rows.map(r => ({ ...r, group_label: g.tm_name }))
+      )
+    : prot.mode === "equip_list"
+    ? (prot.equip_groups || []).flatMap(g =>
+        g.rows.map(r => ({ ...r, group_label: `${g.equip_name} (${g.serial})` }))
       )
     : (prot.rows || []);
 
@@ -281,7 +285,7 @@ export default function ProtocolPreview({ prot, workTypes, instruments, open, on
         <thead>
           <tr>
             <th style={{ ...s.th, width: 30 }}>№</th>
-            {prot.mode === "tm_list" && <th style={s.th}>ТМ / Объект</th>}
+            {(prot.mode === "tm_list" || prot.mode === "equip_list") && <th style={s.th}>{prot.mode==="equip_list" ? "Единица оборудования" : "ТМ / Объект"}</th>}
             <th style={s.th}>Параметр</th>
             <th style={{ ...s.th, width: 60 }}>Ед. изм.</th>
             <th style={{ ...s.th, width: 80 }}>Норматив</th>

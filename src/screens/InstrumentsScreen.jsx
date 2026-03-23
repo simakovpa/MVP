@@ -190,7 +190,7 @@ export default function InstrumentsScreen({ instruments, setInstruments }) {
             </Col>
           </Row>
           <Row gutter={12}>
-            <Col span={12}>
+            <Col span={14}>
               <Form.Item label="Диапазон измерения">
                 <Input
                   value={form.range}
@@ -198,7 +198,7 @@ export default function InstrumentsScreen({ instruments, setInstruments }) {
                   placeholder="напр.: 100 МОм – 10 ГОм"/>
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={10}>
               <Form.Item label="Класс точности">
                 <Input
                   value={form.accuracy}
@@ -206,17 +206,15 @@ export default function InstrumentsScreen({ instruments, setInstruments }) {
                   placeholder="напр.: 1.0"/>
               </Form.Item>
             </Col>
-            <Col span={6}>
-              <Form.Item label="ЭТЛ">
-                <Select
-                  value={form.lab_id || undefined}
-                  onChange={v => setForm(f => ({...f, lab_id:v}))}
-                  allowClear placeholder="—">
-                  {LABS.map(l => <Option key={l.id} value={l.id}>{l.name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
           </Row>
+          <Form.Item label="Лаборатория (ЭТЛ)">
+            <Select
+              value={form.lab_id || undefined}
+              onChange={v => setForm(f => ({...f, lab_id:v}))}
+              allowClear placeholder="Выберите лабораторию">
+              {LABS.map(l => <Option key={l.id} value={l.id}>{l.name}</Option>)}
+            </Select>
+          </Form.Item>
           <Row gutter={12}>
             <Col span={8}>
               <Form.Item label="Дата последней поверки">

@@ -211,11 +211,15 @@ export const OBJECTS = [
   { id: "o3", name: "ТП-241 «Завод»",                type: "ТП" },
 ];
 
+// Добавляем тип для ОПН/разрядников
 export const EQUIP_ON_OBJECTS = {
   o1: [
-    { id: "eq1", name: "ТФЗМ-110 ячейка №1", serial: "Зав.№2019-4471", nm_id: "nm1", type_id: "et1" },
-    { id: "eq2", name: "ТФЗМ-110 ячейка №2", serial: "Зав.№2019-4472", nm_id: "nm1", type_id: "et1" },
-    { id: "eq3", name: "ТМН-6300/110 осн.",   serial: "Зав.№2015-0983", nm_id: "nm3", type_id: "et2" },
+    { id: "eq1", name: "ТФЗМ-110 ячейка №1",  serial: "Зав.№2019-4471", nm_id: "nm1", type_id: "et1" },
+    { id: "eq2", name: "ТФЗМ-110 ячейка №2",  serial: "Зав.№2019-4472", nm_id: "nm1", type_id: "et1" },
+    { id: "eq3", name: "ТМН-6300/110 осн.",    serial: "Зав.№2015-0983", nm_id: "nm3", type_id: "et2" },
+    { id: "eq5", name: "ОПН-1-10/12 фаза A",  serial: "806608",          nm_id: "nm5", type_id: "et3" },
+    { id: "eq6", name: "ОПН-1-10/12 фаза B",  serial: "806611",          nm_id: "nm5", type_id: "et3" },
+    { id: "eq7", name: "ОПН-1-10/12 фаза C",  serial: "806610",          nm_id: "nm5", type_id: "et3" },
   ],
   o2: [],
   o3: [{ id: "eq4", name: "ТМ-400/10", serial: "Зав.№2011-1122", nm_id: "nm4", type_id: "et2" }],

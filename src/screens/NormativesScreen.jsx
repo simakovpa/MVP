@@ -453,7 +453,7 @@ export default function NormativesScreen({
                   },
                 ]}
               />
-              <Modal open={!!editNr} title={editNr==="new"?"Новый нормативный диапазон":"Редактировать диапазон"} width={760}
+              <Modal open={!!editNr} title={editNr==="new"?"Новый нормативный диапазон":"Редактировать диапазон"} width={900}
                 onOk={() => {
                   if (editNr==="new") setNormRanges(prev=>[...prev,{...nrForm,id:uid()}]);
                   else setNormRanges(prev=>prev.map(x=>x.id===editNr?{...x,...nrForm}:x));
@@ -461,22 +461,21 @@ export default function NormativesScreen({
                 }}
                 onCancel={() => setEditNr(null)} okText="Сохранить">
                 <Form layout="vertical" style={{ marginTop:8 }}>
+                  <Form.Item label="Параметр *">
+                    <Select value={nrForm.param_id} onChange={v=>setNrForm(f=>({...f,param_id:v}))}
+                      showSearch filterOption={(input,opt)=>String(opt?.label??"").toLowerCase().includes(input.toLowerCase())}
+                      options={params.map(p=>({ value:p.id, label:`${p.name} (${p.unit})` }))}
+                      placeholder="Выберите параметр измерения"/>
+                  </Form.Item>
                   <Row gutter={12}>
-                    <Col span={8}>
+                    <Col span={12}>
                       <Form.Item label="Тип ТМЦ *">
                         <Select value={nrForm.type_id} onChange={v=>setNrForm(f=>({...f,type_id:v}))}>
                           {EQUIP_TYPES.map(t=><Option key={t.id} value={t.id}>{t.name}</Option>)}
                         </Select>
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
-                      <Form.Item label="Параметр *">
-                        <Select value={nrForm.param_id} onChange={v=>setNrForm(f=>({...f,param_id:v}))}>
-                          {params.map(p=><Option key={p.id} value={p.id}>{p.name} ({p.unit})</Option>)}
-                        </Select>
-                      </Form.Item>
-                    </Col>
-                    <Col span={8}>
+                    <Col span={12}>
                       <Form.Item label="Источник НТД">
                         <Input value={nrForm.source} onChange={e=>setNrForm(f=>({...f,source:e.target.value}))} placeholder="напр.: СТО 34.01 табл.10.1.1"/>
                       </Form.Item>
