@@ -12,6 +12,7 @@ import {
   OBJECTS, EQUIP_ON_OBJECTS, TM_ON_OBJECTS,
   PARAMS, WORK_TYPES, EMPLOYEES
 } from "../data/mockData";
+import { calcZoneStatus, getEffectiveStatus } from "../utils/helpers";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -122,6 +123,10 @@ function buildAllHistory(protocols) {
 }
 
 function buildHistoryItem(prot, workType, object, execNames, row) {
+  // Пересчитываем статус на основе текущих zones и fact
+  const effective = getEffectiveStatus(row);
+  const finalStatus = effective.label;
+  
   return {
     protocol_id: prot.id,
     protocol_number: prot.number,
@@ -136,7 +141,8 @@ function buildHistoryItem(prot, workType, object, execNames, row) {
     norm_source: row.norm_source,
     auto_status: row.auto_status,
     manual_status: row.manual_status,
-    final_status: row.manual_status || row.auto_status || "Не определено",
+    final_status: finalStatus,
+    color: effective.color,
     zones: row.zones,
     note: row.note,
   };
@@ -202,9 +208,12 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
       h.final_status === "Область риска" || h.final_status === "Допустимо" || h.final_status === "Риск"
     ).length;
     const critical = filteredHistory.filter(h =>
-      h.final_status === "Предельное состояние" || h.final_status === "Недопустимо" || h.final_status === "Отклонение"
+      h.final_status === "Предельное состояние" || h.final_status === "Недопустимо" || h.final_status === "Отклонение" || h.final_status === "Не соответствует"
     ).length;
-    return { total, normal, warning, critical };
+    const undefined = filteredHistory.filter(h =>
+      h.final_status === "Не определено" || h.final_status === "Не измерено" || h.fact == null
+    ).length;
+    return { total, normal, warning, critical, undefined };
   }, [filteredHistory]);
 
   // Доступное оборудование для выбранного объекта
@@ -260,9 +269,10 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
       width: 200,
       ellipsis: true,
       render: (_, r) => (
-        <span>
+        <span style={{ display: "block" }}>
           {r.equip_name || r.tm_name || "—"}
-          {r.equip_serial && <Text type="secondary" style={{ fontSize: 11 }}> ({r.equip_serial})</Text>}
+          {r.equip_serial && <br />}
+          {r.equip_serial && <Text type="secondary" style={{ fontSize: 11 }}>Зав. №: {r.equip_serial}</Text>}
         </span>
       ),
     },
@@ -407,35 +417,33 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
 
       {/* Статистика */}
       <Card size="small" style={{ marginBottom: 16 }} title="Сводка">
-        <Row gutter={16}>
-          <Col span={6}>
-            <Statistic title="Всего измерений" value={stats.total} />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Норма"
-              value={stats.normal}
-              valueStyle={{ color: "#52c41a" }}
-              prefix={<CheckCircleOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Предупреждение"
-              value={stats.warning}
-              valueStyle={{ color: "#faad14" }}
-              prefix={<WarningOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Критические"
-              value={stats.critical}
-              valueStyle={{ color: "#ff4d4f" }}
-              prefix={<CloseCircleOutlined />}
-            />
-          </Col>
-        </Row>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", padding: "0 16px" }}>
+          <div style={{ textAlign: "center", minWidth: 80, height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <InfoCircleOutlined style={{ fontSize: 24, color: "#1890ff", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: 24, lineHeight: 1.2 }}>{stats.total}</div>
+            <div style={{ fontSize: 12, color: "#00000073" }}>Всего</div>
+          </div>
+          <div style={{ textAlign: "center", minWidth: 80, height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <CheckCircleOutlined style={{ fontSize: 24, color: "#52c41a", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: 24, lineHeight: 1.2, color: "#52c41a" }}>{stats.normal}</div>
+            <div style={{ fontSize: 12, color: "#00000073" }}>Норма</div>
+          </div>
+          <div style={{ textAlign: "center", minWidth: 80, height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <WarningOutlined style={{ fontSize: 24, color: "#faad14", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: 24, lineHeight: 1.2, color: "#faad14" }}>{stats.warning}</div>
+            <div style={{ fontSize: 12, color: "#00000073" }}>Предупреждение</div>
+          </div>
+          <div style={{ textAlign: "center", minWidth: 80, height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <CloseCircleOutlined style={{ fontSize: 24, color: "#ff4d4f", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: 24, lineHeight: 1.2, color: "#ff4d4f" }}>{stats.critical}</div>
+            <div style={{ fontSize: 12, color: "#00000073" }}>Критические</div>
+          </div>
+          <div style={{ textAlign: "center", minWidth: 80, height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <MinusCircleOutlined style={{ fontSize: 24, color: "#8c8c8c", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: 24, lineHeight: 1.2, color: "#8c8c8c" }}>{stats.undefined}</div>
+            <div style={{ fontSize: 12, color: "#00000073" }}>Не определено</div>
+          </div>
+        </div>
       </Card>
 
       {/* Таблица */}

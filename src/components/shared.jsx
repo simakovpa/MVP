@@ -63,10 +63,10 @@ const { Option } = Select;
 
 export function ZoneEditor({ zones, onChange }) {
   const colorOpts = [
-    { label:"Норма (зелёный)",     value:"success"    },
-    { label:"Риск (жёлтый)",       value:"warning"    },
-    { label:"Критично (красный)",  value:"error"      },
-    { label:"Инфо (синий)",        value:"processing" },
+    { label:"Норма",     value:"success"    },
+    { label:"Риск",       value:"warning"    },
+    { label:"Критично",  value:"error"      },
+    { label:"Инфо",        value:"processing" },
   ];
   const add  = () => onChange([...zones, { id:uid(), label:"Новый статус", min:null, min_inc:true, max:null, max_inc:true, color:"success" }]);
   const del  = id => onChange(zones.filter(z => z.id !== id));
