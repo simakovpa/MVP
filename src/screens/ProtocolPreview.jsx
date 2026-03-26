@@ -312,8 +312,10 @@ export default function ProtocolPreview({ prot, workTypes, instruments, open, on
             return (
               <tr key={row.id}>
                 <td style={s.tdCenter}>{i + 1}</td>
-                {prot.mode === "tm_list" && <td style={s.td}>{row.tm_name}</td>}
-                <td style={s.td}>{row.param_name}</td>
+                {(prot.mode === "tm_list" || prot.mode === "equip_list") && (
+                  <td style={s.td}>{row.group_label || row.tm_name || ""}</td>
+                )}
+                <td style={s.td}>{row.param_name || "—"}</td>
                 <td style={s.tdCenter}>{row.unit}</td>
                 <td style={s.tdCenter}>{normStr}</td>
                 <td style={{ ...s.tdCenter, fontWeight: "bold" }}>
