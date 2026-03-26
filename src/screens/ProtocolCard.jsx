@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  InputNumber, notification, Divider, Form
+  InputNumber, notification, Divider, Form, message
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
@@ -161,6 +161,25 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     api.success({ message:"Статус строки обновлён", duration:2 });
   }
 
+  function resetManual() {
+    const { rowId, tmIdx } = manualModal;
+    const oldRow = (prot.mode==="equipment" ? prot.rows : 
+      prot.mode==="equip_list" ? (prot.equip_groups||[])[tmIdx]?.rows : prot.tm_groups[tmIdx]?.rows
+    ).find(r=>r.id===rowId);
+    const oldStatus = oldRow?.manual_status || "";
+    const upd = row => row.id!==rowId ? row
+      : {...row, manual_status:undefined, manual_reason:undefined, is_overridden:false};
+    const updated = {...prot};
+    if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
+    else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
+    else updated.tm_groups = prot.tm_groups.map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
+    updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
+      action:`Сброшен переопределённый статус: «${oldStatus}» → расчётный` }];
+    onUpdate(updated);
+    setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal");
+    api.success({ message:"Ручной статус сброшен", duration:2 });
+  }
+
   function transition(newStatus, extra={}) {
     const labels = {
       "На проверке":"Отправлен на проверку", "Черновик":"Возвращён в черновик",
@@ -193,17 +212,35 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
               onChange={v=>updateRowField(r.id,"fact",v,tmIdx)} placeholder="Введите"/>
           : <Text style={{ fontSize:13,fontWeight:600 }}>{r.fact??"-"}</Text>
       },
-      { title:"Статус", key:"status", width:210, render:(_,r) => {
+      { title:"Статус", key:"status", width:220, render:(_,r) => {
         const s = getEffectiveStatus(r);
         return (
           <Space direction="vertical" size={2}>
             <RowStatusBadge row={r}/>
-            {(isEditable||canOverride) && (s.undefined||canOverride) && (
-              <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto" }}
-                icon={<EditOutlined/>}
-                onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); setManualSeverity(r.severity||"normal"); }}>
-                {s.undefined?"Указать статус":"Переопределить"}
-              </Button>
+            {(isEditable||canOverride) && (s.undefined||canOverride||r.manual_status) && (
+              <>
+                <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto" }}
+                  icon={<EditOutlined/>}
+                  onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); setManualSeverity(r.severity||"normal"); }}>
+                  {s.undefined?"Указать статус":"Переопределить"}
+                </Button>
+                {r.manual_status && (
+                  <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto", color:"#ff4d4f" }}
+                    onClick={() => {
+                      const upd = row => row.id!==r.id ? row : {...row, manual_status:undefined, manual_reason:undefined, is_overridden:false};
+                      const updated = {...prot};
+                      if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
+                      else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
+                      else updated.tm_groups = prot.tm_groups.map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
+                      updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
+                        action:`Сброшен переопределённый статус: «${r.manual_status}» → расчётный` }];
+                      onUpdate(updated);
+                      message.success({ content:"Ручной статус сброшен", duration:2 });
+                    }}>
+                    Сбросить
+                  </Button>
+                )}
+              </>
             )}
           </Space>
         );
@@ -490,9 +527,16 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
 
       <Modal title={canOverride ? "Переопределение статуса строки" : "Указать статус (норматив не задан)"}
         open={!!manualModal}
-        onOk={applyManual}
         onCancel={() => { setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal"); }}
-        okText="Применить">
+        footer={
+          <Space>
+            {manualVal && (
+              <Button onClick={resetManual}>Сбросить к расчётному</Button>
+            )}
+            <Button onClick={() => { setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal"); }}>Отмена</Button>
+            <Button type="primary" onClick={applyManual}>Применить</Button>
+          </Space>
+        }>
         <Row gutter={12} style={{ marginBottom:12 }}>
           <Col span={12}>
             <Form.Item label="Критичность" style={{ marginBottom:0 }}>

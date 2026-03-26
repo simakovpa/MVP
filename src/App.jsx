@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ConfigProvider, Layout, Menu, Badge, Typography
 } from "antd";
@@ -38,11 +38,11 @@ const theme = {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [protocols,     setProtocols]     = useState(INIT_PROTOCOLS);
-  const [normRanges,    setNormRanges]    = useState(INIT_NORM_RANGES);
-  const [passportNorms, setPassportNorms] = useState(INIT_PASSPORT_NORMS);
-  const [overrides,     setOverrides]     = useState(INIT_OVERRIDES);
-  const [instruments,   setInstruments]   = useState(INIT_INSTRUMENTS);
+  const [protocols,     setProtocols]     = useState(() => { const s = localStorage.getItem('protocols'); return s ? JSON.parse(s) : INIT_PROTOCOLS; });
+  const [normRanges,    setNormRanges]    = useState(() => { const s = localStorage.getItem('normRanges'); return s ? JSON.parse(s) : INIT_NORM_RANGES; });
+  const [passportNorms, setPassportNorms] = useState(() => { const s = localStorage.getItem('passportNorms'); return s ? JSON.parse(s) : INIT_PASSPORT_NORMS; });
+  const [overrides,     setOverrides]     = useState(() => { const s = localStorage.getItem('overrides'); return s ? JSON.parse(s) : INIT_OVERRIDES; });
+  const [instruments,   setInstruments]   = useState(() => { const s = localStorage.getItem('instruments'); return s ? JSON.parse(s) : INIT_INSTRUMENTS; });
   const [nomenclatures, setNomenclatures] = useState(NOMENCLATURES);
   const [workTypes,     setWorkTypes]     = useState(WORK_TYPES);
   const [params,        setParams]        = useState(PARAMS);
@@ -51,6 +51,13 @@ export default function App() {
   const [screen,      setScreen]      = useState("list");
   const [activeProtId, setActiveProtId] = useState(null);
   const [menuKey,     setMenuKey]     = useState("protocols");
+
+  // Синхронизация справочников с localStorage
+  useEffect(() => { localStorage.setItem('protocols', JSON.stringify(protocols)); }, [protocols]);
+  useEffect(() => { localStorage.setItem('normRanges', JSON.stringify(normRanges)); }, [normRanges]);
+  useEffect(() => { localStorage.setItem('passportNorms', JSON.stringify(passportNorms)); }, [passportNorms]);
+  useEffect(() => { localStorage.setItem('overrides', JSON.stringify(overrides)); }, [overrides]);
+  useEffect(() => { localStorage.setItem('instruments', JSON.stringify(instruments)); }, [instruments]);
 
   const activeProt   = protocols.find(p => p.id === activeProtId);
   const newNomCount  = nomenclatures.filter(n => !n.accepted).length;
