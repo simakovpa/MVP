@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal,
+  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  InputNumber, notification, Divider
+  InputNumber, notification, Divider, Form
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
@@ -109,6 +109,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const [defectModal, setDefectModal]         = useState(false);
   const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
+  const [manualSeverity, setManualSeverity]   = useState("normal"); // "normal" | "warning" | "critical"
   const [printModal, setPrintModal]           = useState(false);
   const [manualVal, setManualVal]             = useState("");
   const [manualReason, setManualReason]       = useState("");
@@ -148,7 +149,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     if (!manualReason.trim()) { api.warning({ message:"Укажите обоснование" }); return; }
     const { rowId, tmIdx } = manualModal;
     const upd = row => row.id!==rowId ? row
-      : {...row, manual_status:manualVal, manual_reason:manualReason, is_overridden:true};
+      : {...row, manual_status:manualVal, manual_reason:manualReason, is_overridden:true, severity:manualSeverity};
     const updated = {...prot};
     if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
     else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
@@ -156,7 +157,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
       action:`Статус строки переопределён: «${manualVal}» — ${manualReason}` }];
     onUpdate(updated);
-    setManualModal(null); setManualVal(""); setManualReason("");
+    setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal");
     api.success({ message:"Статус строки обновлён", duration:2 });
   }
 
@@ -200,7 +201,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             {(isEditable||canOverride) && (s.undefined||canOverride) && (
               <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto" }}
                 icon={<EditOutlined/>}
-                onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); }}>
+                onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); setManualSeverity(r.severity||"normal"); }}>
                 {s.undefined?"Указать статус":"Переопределить"}
               </Button>
             )}
@@ -490,10 +491,25 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       <Modal title={canOverride ? "Переопределение статуса строки" : "Указать статус (норматив не задан)"}
         open={!!manualModal}
         onOk={applyManual}
-        onCancel={() => { setManualModal(null); setManualVal(""); setManualReason(""); }}
+        onCancel={() => { setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal"); }}
         okText="Применить">
-        <Input value={manualVal} onChange={e=>setManualVal(e.target.value)}
-          placeholder="Статус: Норма, Отклонение, Предельное состояние..." style={{ marginBottom:12 }}/>
+        <Row gutter={12} style={{ marginBottom:12 }}>
+          <Col span={12}>
+            <Form.Item label="Критичность" style={{ marginBottom:0 }}>
+              <Select value={manualSeverity} onChange={v=>setManualSeverity(v)} style={{ width:"100%" }}>
+                <Option value="normal">Норма</Option>
+                <Option value="warning">Предупреждение</Option>
+                <Option value="critical">Критическое</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Статус" style={{ marginBottom:0 }}>
+              <Input value={manualVal} onChange={e=>setManualVal(e.target.value)}
+                placeholder="Норма, Отклонение..."/>
+            </Form.Item>
+          </Col>
+        </Row>
         <Input.TextArea rows={2} value={manualReason} onChange={e=>setManualReason(e.target.value)}
           placeholder="Обоснование (обязательно)..."/>
       </Modal>

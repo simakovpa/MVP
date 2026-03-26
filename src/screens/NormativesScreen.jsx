@@ -468,7 +468,7 @@ export default function NormativesScreen({
                       placeholder="Выберите параметр измерения"/>
                   </Form.Item>
                   <Row gutter={12}>
-                    <Col span={12}>
+                    <Col span={8}>
                       <Form.Item label="Тип ТМЦ *">
                         <Select value={nrForm.type_id} onChange={v=>setNrForm(f=>({...f,type_id:v}))}>
                           {EQUIP_TYPES.map(t=><Option key={t.id} value={t.id}>{t.name}</Option>)}

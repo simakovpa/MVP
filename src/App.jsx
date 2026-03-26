@@ -4,7 +4,7 @@ import {
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, ControlOutlined,
-  ThunderboltOutlined, SafetyCertificateOutlined
+  ThunderboltOutlined, SafetyCertificateOutlined, HistoryOutlined
 } from "@ant-design/icons";
 import {
   INIT_PROTOCOLS, INIT_NORM_RANGES, INIT_PASSPORT_NORMS,
@@ -16,6 +16,7 @@ import ProtocolCard    from "./screens/ProtocolCard";
 import CreateProtocol  from "./screens/CreateProtocol";
 import NormativesScreen, { LabsScreen } from "./screens/NormativesScreen";
 import InstrumentsScreen from "./screens/InstrumentsScreen";
+import HistoryScreen from "./screens/HistoryScreen";
 
 const { Sider, Content } = Layout;
 const { Text } = Typography;
@@ -72,6 +73,7 @@ export default function App() {
   const menuItems = [
     { key:"protocols",   icon:<FileProtectOutlined/>, label:"Протоколы" },
     { key:"create",      icon:<PlusOutlined/>,        label:"Создать протокол" },
+    { key:"history",     icon:<HistoryOutlined/>,     label:"История измерений" },
     { type:"divider" },
     { key:"instruments", icon:<ThunderboltOutlined/>,
       label:<span>Приборы {expiredCount>0 && <Badge count={expiredCount} size="small" style={{ marginLeft:4 }}/>}</span> },
@@ -87,6 +89,7 @@ export default function App() {
     else if (key==="normatives")  nav("normatives","normatives");
     else if (key==="instruments") nav("instruments","instruments");
     else if (key==="labs")        nav("labs","labs");
+    else if (key==="history")     nav("history","history");
   }
 
   return (
@@ -165,6 +168,15 @@ export default function App() {
             )}
             {screen==="labs" && (
               <LabsScreen labs={labs} setLabs={setLabs}/>
+            )}
+            {screen==="history" && (
+              <HistoryScreen
+                protocols={protocols}
+                workTypes={workTypes}
+                params={params}
+                instruments={instruments}
+                onOpenProtocol={openProt}
+              />
             )}
           </Content>
         </Layout>
