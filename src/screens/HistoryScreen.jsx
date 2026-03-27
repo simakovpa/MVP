@@ -272,7 +272,7 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
       key: "protocol_number",
       width: 160,
       render: (v, r) => (
-        <Button type="link" onClick={() => onOpenProtocol && onOpenProtocol(r.protocol_id)} style={{ padding: 0 }}>
+        <Button type="link" onClick={() => onOpenProtocol && onOpenProtocol(protocols.find(p => p.id === r.protocol_id))} style={{ padding: 0 }}>
           {v}
         </Button>
       ),
