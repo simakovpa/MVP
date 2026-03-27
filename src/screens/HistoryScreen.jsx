@@ -78,6 +78,9 @@ function buildAllHistory(protocols) {
   const history = [];
 
   protocols.forEach(prot => {
+    // Исключаем протоколы со статусом "Аннулирован"
+    if (prot.status === "Аннулирован") return;
+
     const workType = WORK_TYPES.find(w => w.id === prot.work_type_id);
     const object = findObjectById(prot.object_id);
     const execNames = (prot.executor_ids || []).map(id => EMPLOYEES.find(e => e.id === id)?.name || id).join(", ");
