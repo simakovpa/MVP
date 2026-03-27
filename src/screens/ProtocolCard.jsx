@@ -108,6 +108,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const [cancelModal, setCancelModal]         = useState(false);
   const [cancelReason, setCancelReason]       = useState("");
   const [defectModal, setDefectModal]         = useState(false);
+  const [signConfirmModal, setSignConfirmModal] = useState(false); //nochange
   const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
   const [manualSeverity, setManualSeverity]   = useState("normal"); // "normal" | "warning" | "critical"
@@ -347,8 +348,13 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             )}
             {prot.status==="На проверке" && (<>
               <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("В работе")}>Вернуть в работу</Button>
-              <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
-                onClick={() => setConclusionModal(true)}>Подписать</Button>
+              {getAllRows().some(r => r.fact === null || r.fact === undefined || r.fact === "") ? (
+                <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
+                  onClick={() => setSignConfirmModal(true)}>Подписать</Button>
+              ) : (
+                <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
+                  onClick={() => setConclusionModal(true)}>Подписать</Button>
+              )}
             </>)}
             {prot.status==="Подписан" && (
               <Button danger icon={<StopOutlined/>} onClick={() => setCancelModal(true)}>Аннулировать</Button>
@@ -520,6 +526,54 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           placeholder="Текст заключения (необязательно)"/>
         {badCount>0 && <Alert type="warning" showIcon message={`${badCount} строк с ненормативными значениями`} style={{ marginTop:8 }}/>}
         {undefinedCount>0 && <Alert type="info" showIcon message={`${undefinedCount} строк без норматива`} style={{ marginTop:8 }}/>}
+      </Modal>
+
+      {/* Модал подтверждения подписания с удалением незаполненных измерений */}
+      <Modal
+        title={<span style={{ color:"#cf1322" }}><WarningOutlined/> Подтверждение подписания</span>}
+        open={signConfirmModal}
+        onCancel={() => setSignConfirmModal(false)}
+        footer={
+          <Space>
+            <Button onClick={() => setSignConfirmModal(false)}>Отмена</Button>
+            <Button type="primary" style={{ background:"#389e0d" }}
+              onClick={() => {
+                // Удаляем измерения без значений fact и обновляем протокол
+                const updated = {...prot};
+                if (prot.mode === "equipment") {
+                  updated.rows = (prot.rows || []).filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "");
+                } else if (prot.mode === "tm_list") {
+                  updated.tm_groups = (prot.tm_groups || []).map(g => ({
+                    ...g,
+                    rows: g.rows.filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "")
+                  }));
+                } else if (prot.mode === "equip_list") {
+                  updated.equip_groups = (prot.equip_groups || []).map(g => ({
+                    ...g,
+                    rows: g.rows.filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "")
+                  }));
+                }
+                // Сохраняем обновленный протокол
+                onUpdate(updated);
+                // Закрываем текущий модал и открываем модал выбора заключения
+                setSignConfirmModal(false);
+                setConclusionModal(true);
+              }}>
+              Подписать
+            </Button>
+          </Space>
+        }
+      >
+        <Alert
+          type="warning"
+          showIcon
+          message="Внимание!"
+          description="Все характеристики без указанных данных измерений будут удалены из итогового протокола."
+          style={{ marginBottom: 16 }}
+        />
+        <Text type="secondary">
+          После подписания протокола измерения без внесённых значений не будут отображаться в документе.
+        </Text>
       </Modal>
 
       <Modal title={<span style={{ color:"#cf1322" }}><StopOutlined/> Аннулирование</span>}
