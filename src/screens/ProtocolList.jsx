@@ -5,14 +5,24 @@ import {
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, SearchOutlined,
-  WarningOutlined, ReloadOutlined, ToolOutlined
+  WarningOutlined, ReloadOutlined, ToolOutlined, EditOutlined
 } from "@ant-design/icons";
-import { OBJECTS } from "../data/mockData";
+import { OBJECTS, EMPLOYEES, empName } from "../data/mockData";
 import { deptLabel } from "../data/mockData";
 import { countBadRows, getEffectiveStatus, hasExpiredInstruments } from "../utils/helpers";
 import { StatusTag } from "../components/shared";
 
 const { Title, Text } = Typography;
+
+// Формат ФИО: "Фамилия И.О."
+const formatFIO = (fullName) => {
+  if (!fullName) return "—";
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length < 2) return fullName;
+  const lastName = parts[0];
+  const initials = parts.slice(1).map(p => p.charAt(0).toUpperCase() + ".").join("");
+  return `${lastName} ${initials}`;
+};
 const { Option } = Select;
 
 const conclusionCfg = {
@@ -88,6 +98,29 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
       return bad>0
         ? <Tag color="warning" icon={<WarningOutlined/>}>{bad} строк с отклонениями</Tag>
         : <Text type="secondary" style={{ fontSize:11 }}>—</Text>;
+    }},
+    { title:"Сотрудники", key:"staff", width:220, render:(_, r) => {
+      const items = [];
+      if (r.reviewer_id) {
+        const reviewer = EMPLOYEES.find(e => e.id === r.reviewer_id);
+        if (reviewer) items.push(<div key="resp"><Text style={{ fontSize:11 }}>Ответственный: </Text><Text strong style={{ fontSize:12 }}>{formatFIO(reviewer.name)}</Text></div>);
+      }
+      if (r.executor_ids?.length) {
+        const names = r.executor_ids.map(id => {
+          const emp = EMPLOYEES.find(e => e.id === id);
+          return emp ? formatFIO(emp.name) : null;
+        }).filter(Boolean);
+        if (names.length) items.push(<div key="exec"><Text style={{ fontSize:11 }}>Участник: </Text><Text strong style={{ fontSize:12 }}>{names.join(", ")}</Text></div>);
+      }
+      return items.length > 0 ? <Space direction="vertical" size={2}>{items}</Space> : <Text type="secondary" style={{ fontSize:11 }}>—</Text>;
+    }},
+    { title:"Действия", key:"act", width:90, render:(_, r) => {
+      if (r.status !== "Черновик") return null;
+      return (
+        <Tooltip title="Редактировать">
+          <Button size="small" type="text" icon={<EditOutlined/>} onClick={() => onOpen(r.id)}/>
+        </Tooltip>
+      );
     }},
   ];
 

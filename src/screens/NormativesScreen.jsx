@@ -447,10 +447,16 @@ export default function NormativesScreen({
                   { title:"Параметр", dataIndex:"param_id", key:"p", render:v=>{ const pr=params.find(x=>x.id===v); return pr?`${pr.name} (${pr.unit})`:"—"; }},
                   { title:"Источник НТД", dataIndex:"source", key:"s", render:v=><Text type="secondary" style={{ fontSize:11 }}>{v}</Text> },
                   { title:"Зоны", key:"z", render:(_,r)=>r.zones.map(z=><Tag key={z.id} color={z.color} style={{ fontSize:10,marginBottom:2 }}>{z.label}</Tag>) },
-                  { title:"", key:"act", width:60, render:(_,r)=>
-                    <Button size="small" type="text" icon={<EditOutlined/>}
-                      onClick={() => { setEditNr(r.id); setNrForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
-                  },
+                  { title:"", key:"act", width:72, render:(_,r)=>(
+                    <Space size={0}>
+                      <Button size="small" type="text" icon={<EditOutlined/>}
+                        onClick={() => { setEditNr(r.id); setNrForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
+                      <Popconfirm title="Удалить диапазон?" okText="Удалить" okButtonProps={{ danger:true }} cancelText="Отмена"
+                        onConfirm={() => { setNormRanges(prev=>prev.filter(x=>x.id!==r.id)); api.success({ message:"Удалено", duration:2 }); }}>
+                        <Button size="small" type="text" icon={<DeleteOutlined style={{ color:"#ff4d4f" }}/>}/>
+                      </Popconfirm>
+                    </Space>
+                  )},
                 ]}
               />
               <Modal open={!!editNr} title={editNr==="new"?"Новый нормативный диапазон":"Редактировать диапазон"} width={900}
@@ -512,10 +518,16 @@ export default function NormativesScreen({
                     return <Tag key={id} color="geekblue" style={{ fontSize:11,marginBottom:2 }}>{nm?.name}</Tag>;
                   })},
                   { title:"Зоны", key:"z", render:(_,r)=>r.zones.map(z=><Tag key={z.id} color={z.color} style={{ fontSize:10,marginBottom:2 }}>{z.label}</Tag>) },
-                  { title:"", key:"act", width:60, render:(_,r)=>
-                    <Button size="small" type="text" icon={<EditOutlined/>}
-                      onClick={() => { setEditPn(r.id); setPnForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
-                  },
+                  { title:"", key:"act", width:72, render:(_,r)=>(
+                    <Space size={0}>
+                      <Button size="small" type="text" icon={<EditOutlined/>}
+                        onClick={() => { setEditPn(r.id); setPnForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
+                      <Popconfirm title="Удалить норматив?" okText="Удалить" okButtonProps={{ danger:true }} cancelText="Отмена"
+                        onConfirm={() => { setPassportNorms(prev=>prev.filter(x=>x.id!==r.id)); api.success({ message:"Удалено", duration:2 }); }}>
+                        <Button size="small" type="text" icon={<DeleteOutlined style={{ color:"#ff4d4f" }}/>}/>
+                      </Popconfirm>
+                    </Space>
+                  )},
                 ]}
               />
               <Modal open={!!editPn} title={editPn==="new"?"Новый паспортный норматив":"Редактировать"} width={760}
