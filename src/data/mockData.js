@@ -296,7 +296,7 @@ export const INIT_PROTOCOLS = [
     executor_ids: ["em4"], reviewer_id: null, instrument_ids: ["ins3"],
     mode: "tm_list", equip_id: null,
     env: { temp: 4 }, voltage_test: null,
-    status: "Черновик", date_signed: null, signed_by: null,
+    status: "В работе", date_signed: null, signed_by: null,
     conclusion_type: null, conclusion_text: "", cancel_reason: null, defects: [],
     tm_groups: [
       { tm_id:"tm1", tm_name:"Опора №1 (анкерная)",

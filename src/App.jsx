@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  ConfigProvider, Layout, Menu, Badge, Typography
+  ConfigProvider, Layout, Menu, Badge, Typography, Modal
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, ControlOutlined,
@@ -71,8 +71,23 @@ export default function App() {
     return new Date(i.date_next_cal) <= new Date();
   }).length;
 
-  function openProt(id)  { setActiveProtId(id); setScreen("card"); setMenuKey("protocols"); }
-  function saveProt(p)   { setProtocols(prev => [p,...prev]); setActiveProtId(p.id); setScreen("card"); }
+  function openProt(p)  {
+    if (p.status === "Черновик") {
+      setActiveProtId(p.id); setScreen("create"); setMenuKey("protocols");
+    } else {
+      setActiveProtId(p.id); setScreen("card"); setMenuKey("protocols");
+    }
+  }
+  function editProt(id)  { setActiveProtId(id); setScreen("create"); setMenuKey("protocols"); }
+  function saveProt(p)   {
+    const exists = protocols.find(x => x.id === p.id);
+    if (exists) {
+      setProtocols(prev => prev.map(x => x.id === p.id ? p : x));
+    } else {
+      setProtocols(prev => [p, ...prev]);
+    }
+    setActiveProtId(p.id); setScreen("card");
+  }
   function updateProt(p) { setProtocols(prev => prev.map(x => x.id===p.id ? p : x)); }
 
   const nav = (s, k) => { setScreen(s); setMenuKey(k || s); };
@@ -147,19 +162,35 @@ export default function App() {
             {screen==="list" && (
               <ProtocolList
                 protocols={protocols} workTypes={workTypes} params={params} instruments={instruments}
-                onOpen={openProt} onCreate={() => nav("create","create")}/>
+                onOpen={openProt} onEdit={editProt} onCreate={() => { setActiveProtId(null); nav("create","create"); }}/>
             )}
             {screen==="card" && activeProt && (
               <ProtocolCard
                 prot={activeProt} workTypes={workTypes} params={params} instruments={instruments}
                 onBack={() => nav("list","protocols")} onUpdate={updateProt}/>
             )}
-            {screen==="create" && (
-              <CreateProtocol
-                protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
-                overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
-                onSave={saveProt} onCancel={() => nav("list","protocols")}/>
-            )}
+            {screen==="create" && (() => {
+              const editProt = activeProtId ? protocols.find(p => p.id === activeProtId) : null;
+              if (editProt) {
+                return (
+                  <Modal open={true} title={`Редактирование черновика ${editProt.number}`} width={900} footer={null}
+                    onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}>
+                    <CreateProtocol
+                      editProtocol={editProt}
+                      protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
+                      overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
+                      onSave={saveProt} onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}/>
+                  </Modal>
+                );
+              }
+              return (
+                <CreateProtocol
+                  editProtocol={null}
+                  protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
+                  overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
+                  onSave={saveProt} onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}/>
+              );
+            })()}
             {screen==="normatives" && (
               <NormativesScreen
                 normRanges={normRanges}    setNormRanges={setNormRanges}

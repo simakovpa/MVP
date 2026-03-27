@@ -5,7 +5,7 @@ import {
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, SearchOutlined,
-  WarningOutlined, ReloadOutlined, ToolOutlined, EditOutlined
+  WarningOutlined, ReloadOutlined, ToolOutlined
 } from "@ant-design/icons";
 import { OBJECTS, EMPLOYEES, empName } from "../data/mockData";
 import { deptLabel } from "../data/mockData";
@@ -48,6 +48,7 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
   const stats = useMemo(() => ({
     total:   protocols.length,
     drafts:  protocols.filter(p=>p.status==="Черновик").length,
+    inWork:  protocols.filter(p=>p.status==="В работе").length,
     review:  protocols.filter(p=>p.status==="На проверке").length,
     signed:  protocols.filter(p=>p.status==="Подписан").length,
     bad:     protocols.filter(p=>countBadRows(p)>0 && p.status!=="Аннулирован").length,
@@ -58,7 +59,7 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
     { title:"Номер", dataIndex:"number", key:"n", width:180,
       render:(v,r) => (
         <Space>
-          <a style={{ fontWeight:600, color:"#1a5fa8" }} onClick={() => onOpen(r.id)}>{v}</a>
+          <a style={{ fontWeight:600, color:"#1a5fa8" }} onClick={() => onOpen(r)}>{v}</a>
           {hasExpiredInstruments(r, instruments) &&
             <Tooltip title="Один или несколько приборов имеют просроченную поверку">
               <ToolOutlined style={{ color:"#ff4d4f", fontSize:13 }}/>
@@ -114,14 +115,6 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
       }
       return items.length > 0 ? <Space direction="vertical" size={2}>{items}</Space> : <Text type="secondary" style={{ fontSize:11 }}>—</Text>;
     }},
-    { title:"Действия", key:"act", width:90, render:(_, r) => {
-      if (r.status !== "Черновик") return null;
-      return (
-        <Tooltip title="Редактировать">
-          <Button size="small" type="text" icon={<EditOutlined/>} onClick={() => onOpen(r.id)}/>
-        </Tooltip>
-      );
-    }},
   ];
 
   return (
@@ -139,6 +132,7 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
         {[
           { label:"Всего",          value:stats.total,   color:"#1a5fa8" },
           { label:"Черновики",      value:stats.drafts,  color:"#595959" },
+          { label:"В работе",       value:stats.inWork,   color:"#722ed1" },
           { label:"На проверке",    value:stats.review,  color:"#1890ff" },
           { label:"Подписаны",      value:stats.signed,  color:"#389e0d" },
           { label:"С отклонениями", value:stats.bad,     color:"#cf1322" },
@@ -162,7 +156,7 @@ export default function ProtocolList({ protocols, workTypes, params, instruments
           <Input prefix={<SearchOutlined style={{ color:"#aaa" }}/>} placeholder="Поиск" value={search}
             onChange={e=>setSearch(e.target.value)} style={{ width:220 }} allowClear/>
           <Select placeholder="Статус" value={fStatus} onChange={setFStatus} allowClear style={{ width:140 }}>
-            {["Черновик","На проверке","Подписан","Аннулирован"].map(s=><Option key={s}>{s}</Option>)}
+            {["Черновик","В работе","На проверке","Подписан","Аннулирован"].map(s=><Option key={s}>{s}</Option>)}
           </Select>
           <Select placeholder="Тип испытаний" value={fType} onChange={setFType} allowClear style={{ width:190 }}>
             {["Эксплуатационные","Приёмо-сдаточные","Внеплановые","Контрольные"].map(t=><Option key={t}>{t}</Option>)}

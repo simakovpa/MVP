@@ -7,6 +7,7 @@ import {
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
   BugOutlined, SafetyCertificateOutlined, ApartmentOutlined, ThunderboltOutlined,
+  ClockCircleOutlined,
   WarningOutlined, SwapOutlined, QuestionCircleOutlined, CalendarOutlined,
   TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined
 } from "@ant-design/icons";
@@ -31,7 +32,7 @@ const conclusionCfg = {
 };
 
 const statusCfgStep = {
-  "Черновик":    0, "На проверке":1, "Подписан":2, "Аннулирован":2
+  "Черновик":    0, "В работе": 1, "На проверке":2, "Подписан":3, "Аннулирован":3
 };
 
 const ENV_LABELS = { temp:"Температура", humidity:"Влажность", pressure:"Давление" };
@@ -114,7 +115,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const [manualVal, setManualVal]             = useState("");
   const [manualReason, setManualReason]       = useState("");
 
-  const isEditable  = prot.status === "Черновик";
+  const isEditable  = prot.status === "Черновик" || prot.status === "В работе";
   const canOverride = prot.status === "На проверке";
   const obj  = OBJECTS.find(o => o.id===prot.object_id);
   const wt   = workTypes.find(w => w.id===prot.work_type_id);
@@ -182,6 +183,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
 
   function transition(newStatus, extra={}) {
     const labels = {
+      "В работе":"Начат ввод измерений",
       "На проверке":"Отправлен на проверку", "Черновик":"Возвращён в черновик",
       "Подписан":"Подписан", "Аннулирован":`Аннулирован. Причина: ${extra.cancel_reason}`,
     };
@@ -326,6 +328,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             style={{ flex:1, minWidth:280 }}
             items={[
               { title:"Черновик",    icon:<EditOutlined/> },
+              { title:"В работе",    icon:<ClockCircleOutlined/> },
               { title:"На проверке", icon:<SendOutlined/> },
               { title:prot.status==="Аннулирован"?"Аннулирован":"Подписан",
                 icon:prot.status==="Аннулирован"?<StopOutlined/>:<SafetyCertificateOutlined/> },
@@ -335,8 +338,15 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
               <Button type="primary" icon={<SendOutlined/>} style={{ background:"#1890ff" }}
                 onClick={() => transition("На проверке")}>Отправить на проверку</Button>
             )}
+            {prot.status==="В работе" && (
+              <>
+                <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("Черновик")}>Вернуть в черновики</Button>
+                <Button type="primary" icon={<SendOutlined/>} style={{ background:"#1890ff" }}
+                  onClick={() => transition("На проверке")}>Отправить на согласование</Button>
+              </>
+            )}
             {prot.status==="На проверке" && (<>
-              <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("Черновик")}>В черновик</Button>
+              <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("В работе")}>Вернуть в работу</Button>
               <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
                 onClick={() => setConclusionModal(true)}>Подписать</Button>
             </>)}

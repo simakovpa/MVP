@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Form, Input, Select, TreeSelect, Row, Col, Card, Button, Space,
   InputNumber, Alert, Divider, Table, Tag, Tooltip, Typography, Steps, Breadcrumb,
@@ -35,8 +35,9 @@ function findNorm(paramId, equipObj, normRanges, passportNorms, overrides, param
 export default function CreateProtocol({
   protocols, normRanges, passportNorms, overrides,
   workTypes, params, instruments,
-  onSave, onCancel
+  onSave, onCancel, editProtocol
 }) {
+  const isEditMode = !!editProtocol;
   const [step, setStep]       = useState(0);
   const [form] = Form.useForm();
   const [mode, setMode]       = useState(null);
@@ -57,6 +58,35 @@ export default function CreateProtocol({
   const envFields = wt?.env_fields || {};
 
   const activeInstruments = instruments.filter(i => !i.archived);
+
+  // Инициализация из editProtocol при редактировании
+  useEffect(() => {
+    if (!editProtocol) return;
+    setObjId(editProtocol.object_id || null);
+    setWtId(editProtocol.work_type_id || null);
+    setMode(editProtocol.mode || null);
+    setEquipId(editProtocol.equip_id || null);
+    setSelTMs(editProtocol.tm_groups?.map(g => g.tm_id) || []);
+    setSelEquips(editProtocol.equip_groups?.map(g => g.equip_id) || []);
+    setExecIds(editProtocol.executor_ids || []);
+    setReviewerId(editProtocol.reviewer_id || null);
+    setInstrIds(editProtocol.instrument_ids || []);
+    setDeptId(editProtocol.dept_id || null);
+    setEnv(editProtocol.env || {});
+    if (editProtocol.object_id && editProtocol.work_type_id && editProtocol.mode) {
+      setStep(1);
+      if ((editProtocol.mode === "equipment" && editProtocol.equip_id) ||
+          (editProtocol.mode === "tm_list" && editProtocol.tm_groups?.length) ||
+          (editProtocol.mode === "equip_list" && editProtocol.equip_groups?.length)) {
+        setStep(2);
+      }
+    }
+    form.setFieldsValue({
+      date_measured: editProtocol.date_measured,
+      lab_id: editProtocol.lab_id,
+      voltage_test: editProtocol.voltage_test,
+    });
+  }, [editProtocol]);
 
   const can1 = objId && wtId && mode;
   const can2 = (
@@ -119,7 +149,8 @@ export default function CreateProtocol({
     if (envFields.pressure && env.pressure !== undefined) envData.pressure = env.pressure;
 
     const newProt = {
-      id:uid(), number:genNum(protocols),
+      id: isEditMode ? editProtocol.id : uid(),
+      number: isEditMode ? editProtocol.number : genNum(protocols),
       date_created:now, date_measured:vals.date_measured || now,
       object_id:objId, work_type_id:wtId, test_type:wt?.type || "Эксплуатационные",
       lab_id:vals.lab_id, dept_id:deptId,
@@ -144,7 +175,7 @@ export default function CreateProtocol({
         });
       })() : undefined,
       env:envData, voltage_test:vals.voltage_test || null,
-      status:"Черновик", date_signed:null, signed_by:null,
+      status:"В работе", date_signed:null, signed_by:null,
       conclusion_type:null, conclusion_text:"", cancel_reason:null, defects:[],
       rows, tm_groups,
       history:[{ date:now+" "+new Date().toTimeString().slice(0,5),
