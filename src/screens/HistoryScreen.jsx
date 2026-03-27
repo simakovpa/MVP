@@ -19,19 +19,33 @@ const { RangePicker } = DatePicker;
 
 // Статус-иконка для измерения
 function StatusIcon({ status }) {
-  if (status === "Норма" || status === "Соответствует") return <CheckCircleOutlined style={{ color: "#52c41a" }} />;
-  if (status === "Область риска" || status === "Допустимо" || status === "Риск") return <WarningOutlined style={{ color: "#faad14" }} />;
-  if (status === "Предельное состояние" || status === "Недопустимо" || status === "Отклонение" || status === "Не соответствует") return <CloseCircleOutlined style={{ color: "#ff4d4f" }} />;
+  if (status === "Норма" || status === "Соответствует" || status === "Соответствует НТД") return <CheckCircleOutlined style={{ color: "#52c41a" }} />;
+  if (status === "Область риска" || status === "Допустимо" || status === "Предупреждение" || status === "Частичное несоответствие") return <WarningOutlined style={{ color: "#faad14" }} />;
+  if (status === "Предельное состояние" || status === "Недопустимо" || status === "Отклонение" || status === "Не соответствует" || status === "Не соответствует НТД") return <CloseCircleOutlined style={{ color: "#ff4d4f" }} />;
   if (status === "Не определено") return <MinusCircleOutlined style={{ color: "#8c8c8c" }} />;
   return null;
 }
 
 // Цвет статуса
 function getStatusColor(status) {
-  if (status === "Норма" || status === "Соответствует" || status === "Подписан") return "success";
-  if (status === "Область риска" || status === "Допустимо" || status === "Риск" || status === "На проверке") return "warning";
-  if (status === "Предельное состояние" || status === "Недопустимо" || status === "Отклонение" || status === "Не соответствует") return "error";
-  if (status === "Не определено" || status === "Черновик") return "default";
+  const s = String(status).trim().toLowerCase();
+  if (s === "норма" || s === "соответствует" || s === "подписан" || s === "соответствует нтд" || s.includes("норма")) return "success";
+  if (s === "область риска" || s === "допустимо" || s === "предупреждение" || s === "на проверке" || s === "частичное несоответствие" || s.includes("допустимо")) return "warning";
+  if (s === "предельное состояние" || s === "недопустимо" || s === "отклонение" || s === "не соответствует" || s === "не соответствует нтд") return "error";
+  if (s === "не определено" || s === "черновик" || s === "не измерено") return "default";
+  return "processing";
+}
+
+// Цвет по критичности severity (для ручных статусов)
+function getSeverityColor(severity) {
+  if (!severity) return "processing";
+  const s = String(severity).trim().toLowerCase();
+  // normal / норма
+  if (s === "normal" || s === "норма" || s === "0") return "success";
+  // warning / предупреждение
+  if (s === "warning" || s === "предупреждение" || s === "1") return "warning";
+  // critical / критическое / критично
+  if (s === "critical" || s === "критическое" || s === "критично" || s === "2") return "error";
   return "processing";
 }
 
@@ -141,6 +155,7 @@ function buildHistoryItem(prot, workType, object, execNames, row) {
     norm_source: row.norm_source,
     auto_status: row.auto_status,
     manual_status: row.manual_status,
+    severity: row.severity,
     final_status: finalStatus,
     color: effective.color,
     zones: row.zones,
@@ -202,16 +217,22 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
   const stats = useMemo(() => {
     const total = filteredHistory.length;
     const normal = filteredHistory.filter(h =>
-      h.final_status === "Норма" || h.final_status === "Соответствует"
+      h.severity === "normal" ||
+      h.final_status === "Норма" || h.final_status === "Соответствует" || h.final_status === "Соответствует НТД" ||
+      h.final_status?.includes("Норма")
     ).length;
     const warning = filteredHistory.filter(h =>
-      h.final_status === "Область риска" || h.final_status === "Допустимо" || h.final_status === "Риск"
+      h.severity === "warning" ||
+      h.final_status === "Область риска" || h.final_status === "Допустимо" || h.final_status === "Предупреждение" ||
+      h.final_status === "Частичное несоответствие" || h.final_status?.includes("Допустимо")
     ).length;
     const critical = filteredHistory.filter(h =>
-      h.final_status === "Предельное состояние" || h.final_status === "Недопустимо" || h.final_status === "Отклонение" || h.final_status === "Не соответствует"
+      h.severity === "critical" ||
+      h.final_status === "Предельное состояние" || h.final_status === "Недопустимо" || h.final_status === "Отклонение" ||
+      h.final_status === "Не соответствует" || h.final_status === "Не соответствует НТД"
     ).length;
     const undefined = filteredHistory.filter(h =>
-      h.final_status === "Не определено" || h.final_status === "Не измерено" || h.fact == null
+      h.fact == null || h.final_status === "Не определено" || h.final_status === "Не измерено"
     ).length;
     return { total, normal, warning, critical, undefined };
   }, [filteredHistory]);
@@ -305,7 +326,17 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
       dataIndex: "final_status",
       key: "final_status",
       width: 140,
-      render: v => <Tag color={getStatusColor(v)}>{v}</Tag>,
+      render: (v, r) => {
+        // Если есть severity, используем его для цвета
+        if (r.severity) {
+          const color = getSeverityColor(r.severity);
+          if (color !== "processing") {
+            return <Tag color={color}>{v}</Tag>;
+          }
+        }
+        // Иначе используем автоматический статус
+        return <Tag color={getStatusColor(v)}>{v}</Tag>;
+      },
     },
     {
       title: "",
