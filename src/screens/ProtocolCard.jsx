@@ -2,16 +2,16 @@ import { useState } from "react";
 import {
   Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  InputNumber, notification, Divider, Form, message
+  InputNumber, notification, Divider, Form, message, Radio
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
   BugOutlined, SafetyCertificateOutlined, ApartmentOutlined, ThunderboltOutlined,
-  ClockCircleOutlined,
+  ClockCircleOutlined, DeleteOutlined,
   WarningOutlined, SwapOutlined, QuestionCircleOutlined, CalendarOutlined,
   TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined
 } from "@ant-design/icons";
-import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel } from "../data/mockData";
+import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel, EQUIP_ON_OBJECTS } from "../data/mockData";
 import {
   getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus
 } from "../utils/helpers";
@@ -108,6 +108,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
   const [cancelModal, setCancelModal]         = useState(false);
   const [cancelReason, setCancelReason]       = useState("");
   const [defectModal, setDefectModal]         = useState(false);
+  const [defectEntity, setDefectEntity]       = useState(null); // {type, id, name, severity} для модала дефекта
   const [signConfirmModal, setSignConfirmModal] = useState(false); //nochange
   const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
@@ -125,6 +126,89 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     .map(id => instruments.find(x=>x.id===id))
     .filter(Boolean);
   const hasExpired = hasExpiredInstruments(prot, instruments);
+
+  // Получить все строки с отклонениями (warning или error)
+  function getEntitiesWithDeviations() {
+    const entities = [];
+    const existingDefectEntityIds = (prot.defects || []).map(d => d.entity_id);
+    
+    if (prot.mode === "equipment") {
+      // Режим единичного оборудования - отклонения относятся к этому оборудованию
+      const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === prot.equip_id);
+      const badRows = (prot.rows || []).filter(r => {
+        const s = getEffectiveStatus(r);
+        return s.color === "error" || s.color === "warning";
+      });
+      if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
+        // Критичность дефекта - максимальная из отклонений
+        const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+        entities.push({
+          type: "equipment",
+          id: equip.id,
+          name: equip.name,
+          severity: maxSeverity,
+          deviationCount: badRows.length
+        });
+      }
+    } else if (prot.mode === "tm_list") {
+      // Режим списка технических мест
+      (prot.tm_groups || []).forEach(g => {
+        const badRows = (g.rows || []).filter(r => {
+          const s = getEffectiveStatus(r);
+          return s.color === "error" || s.color === "warning";
+        });
+        if (badRows.length > 0 && !existingDefectEntityIds.includes(g.tm_id)) {
+          const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+          entities.push({
+            type: "tm",
+            id: g.tm_id,
+            name: g.tm_name,
+            severity: maxSeverity,
+            deviationCount: badRows.length
+          });
+        }
+      });
+    } else if (prot.mode === "equip_list") {
+      // Режим списка оборудования
+      (prot.equip_groups || []).forEach(g => {
+        const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === g.equip_id);
+        const badRows = (g.rows || []).filter(r => {
+          const s = getEffectiveStatus(r);
+          return s.color === "error" || s.color === "warning";
+        });
+        if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
+          const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+          entities.push({
+            type: "equipment",
+            id: equip.id,
+            name: equip.name,
+            severity: maxSeverity,
+            deviationCount: badRows.length
+          });
+        }
+      });
+    }
+    
+    return entities;
+  }
+
+  // Обработчик кнопки "Создать дефект"
+  function handleCreateDefect() {
+    const entitiesWithDeviations = getEntitiesWithDeviations();
+    
+    if (entitiesWithDeviations.length === 0) {
+      api.warning({ message: "Нет отклонений от норм в протоколе" });
+      return;
+    }
+    
+    // Если только одна сущность с отклонениями - предзаполняем
+    if (entitiesWithDeviations.length === 1) {
+      setDefectEntity(entitiesWithDeviations[0]);
+    } else {
+      setDefectEntity(null); // Сбрасываем для отображения списка выбора
+    }
+    setDefectModal(true);
+  }
 
   function getAllRows() {
     if (prot.mode==="tm_list") return (prot.tm_groups||[]).flatMap(g=>g.rows);
@@ -362,7 +446,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             <Button icon={<EyeOutlined/>} onClick={() => setPreviewOpen(true)}>Превью</Button>
             {prot.status!=="Аннулирован" && (
               <Button icon={<BugOutlined/>} style={{ borderColor:"#cf1322",color:"#cf1322" }}
-                onClick={() => setDefectModal(true)}>Создать дефект</Button>
+                onClick={handleCreateDefect}>Создать дефект</Button>
             )}
             <Button icon={<PrinterOutlined/>} onClick={() => setPrintModal(true)}>Печатная форма</Button>
           </Space>
@@ -493,13 +577,24 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           label:<span>Дефекты {prot.defects?.length>0 && <Tag style={{ fontSize:10 }}>{prot.defects.length}</Tag>}</span>,
           children:(
             <Card size="small" style={{ borderRadius:8 }}
-              extra={<Button size="small" icon={<BugOutlined/>} onClick={()=>setDefectModal(true)}>Создать</Button>}>
+              extra={<Button size="small" icon={<BugOutlined/>} onClick={handleCreateDefect} disabled={badCount === 0 || getEntitiesWithDeviations().length === 0 || getEntitiesWithDeviations().every(e => (prot.defects || []).some(d => d.entity_id === e.id))}>Создать</Button>}>
               {!prot.defects?.length
                 ? <Empty description="Дефекты не зафиксированы" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
                 : prot.defects.map(d=>(
-                    <Alert key={d.id} type="warning" showIcon icon={<BugOutlined/>}
-                      message={<Text strong style={{ fontSize:12 }}>{d.title}</Text>}
-                      description={<Text type="secondary" style={{ fontSize:11 }}>{d.description} · {d.created}</Text>}
+                    <Alert key={d.id} type={d.severity === "error" ? "error" : "warning"} showIcon icon={<BugOutlined/>}
+                      message={<Space><Text strong style={{ fontSize:12 }}>{d.title}</Text>
+                        {d.severity && <Tag color={d.severity === "error" ? "red" : "orange"} style={{ fontSize: 10 }}>
+                          {d.severity === "error" ? "Критический" : "Некритический"}</Tag>}
+                        <Button size="small" type="text" danger icon={<DeleteOutlined/>} onClick={() => {
+                          const updated = {...prot, defects: (prot.defects || []).filter(def => def.id !== d.id)};
+                          onUpdate(updated);
+                          api.success({ message:"Дефект удалён", duration:2 });
+                        }}/>
+                      </Space>}
+                      description={<Space direction="vertical" size={2}>
+                        <Text type="secondary" style={{ fontSize:11 }}>{d.description} · {d.created}</Text>
+                        {d.entity_name && <Text type="secondary" style={{ fontSize: 10 }}>Привязан к: {d.entity_name}</Text>}
+                      </Space>}
                       style={{ marginBottom:8 }}/>
                   ))
               }
@@ -625,16 +720,74 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       <Modal title={<span><BugOutlined style={{ color:"#cf1322",marginRight:8 }}/>Создание дефекта</span>}
         open={defectModal}
         onOk={() => {
-          const d = { id:`d${Date.now()}`, title:`Дефект из протокола ${prot.number}`,
-            description:`Выявлено при испытаниях. Отклонений: ${badCount}. Без норматива: ${undefinedCount}.`,
-            created:new Date().toISOString().slice(0,10) };
+          const entitiesWithDeviations = getEntitiesWithDeviations();
+          const entity = defectEntity || entitiesWithDeviations[0];
+          const severityLabel = entity?.severity === "error" ? "Критическое" : "Некритическое";
+          const d = { 
+            id:`d${Date.now()}`, 
+            title:`Дефект из протокола ${prot.number}`,
+            description:`Выявлено при испытаниях. ${entity ? `Сущность: ${entity.name}. ` : ""}Критичность: ${severityLabel}. Отклонений: ${badCount}. Без норматива: ${undefinedCount}.`,
+            created:new Date().toISOString().slice(0,10),
+            entity_type: entity?.type || null,
+            entity_id: entity?.id || null,
+            entity_name: entity?.name || null,
+            severity: entity?.severity || null
+          };
           onUpdate({...prot, defects:[...(prot.defects||[]),d]});
-          setDefectModal(false); api.success({ message:"Дефект создан", duration:2 });
+          setDefectModal(false); 
+          setDefectEntity(null);
+          api.success({ message:"Дефект создан", duration:2 });
         }}
-        onCancel={() => setDefectModal(false)} okText="Создать дефект" okButtonProps={{ danger:true }}>
+        onCancel={() => { setDefectModal(false); setDefectEntity(null); }} 
+        okText="Создать дефект" 
+        okButtonProps={{ danger:true }}
+        okDisabled={!defectEntity && getEntitiesWithDeviations().length > 1}
+      >
         <Alert type="info" showIcon style={{ marginBottom:12 }}
           message="Дефект будет создан с привязкой к протоколу и объекту."/>
         <Text type="secondary" style={{ fontSize:12 }}>Объект: {obj?.name}</Text>
+        
+        {/* Выбор сущности с отклонениями */}
+        {getEntitiesWithDeviations().length > 1 && (
+          <div style={{ marginTop: 16 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>Выберите сущность с отклонениями:</Text>
+            <Radio.Group 
+              value={defectEntity?.id} 
+              onChange={(e) => {
+                const selected = getEntitiesWithDeviations().find(ent => ent.id === e.target.value);
+                setDefectEntity(selected);
+              }}
+              style={{ width: "100%" }}
+            >
+              <Space direction="vertical" style={{ width: "100%" }}>
+                {getEntitiesWithDeviations().map(ent => (
+                  <Radio key={ent.id} value={ent.id} style={{ width: "100%", marginRight: 0 }}>
+                    <Space align="center">
+                      <Text>{ent.name}</Text>
+                      <Tag color={ent.severity === "error" ? "red" : "orange"} style={{ marginLeft: 8 }}>
+                        {ent.severity === "error" ? "Критическое" : "Некритическое"}
+                      </Tag>
+                      <Text type="secondary" style={{ fontSize: 11 }}>({ent.deviationCount} отклонение{ent.deviationCount > 1 ? "ий" : "ие"})</Text>
+                    </Space>
+                  </Radio>
+                ))}
+              </Space>
+            </Radio.Group>
+          </div>
+        )}
+        
+        {/* Отображение выбранной сущности (предзаполненный случай) */}
+        {defectEntity && getEntitiesWithDeviations().length === 1 && (
+          <div style={{ marginTop: 16, padding: 12, background: "#f6f8fa", borderRadius: 6 }}>
+            <Space>
+              <Text strong>Сущность:</Text>
+              <Text>{defectEntity.name}</Text>
+              <Tag color={defectEntity.severity === "error" ? "red" : "orange"}>
+                {defectEntity.severity === "error" ? "Критическое" : "Некритическое"}
+              </Tag>
+            </Space>
+          </div>
+        )}
       </Modal>
 
 

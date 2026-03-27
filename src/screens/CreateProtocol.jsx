@@ -53,15 +53,62 @@ export default function CreateProtocol({
   const [env, setEnv]               = useState({});
 
   const wt        = workTypes.find(w => w.id === wtId);
-  const equipList = objId ? (EQUIP_ON_OBJECTS[objId] || []) : [];
+  const equipListRaw = objId ? (EQUIP_ON_OBJECTS[objId] || []) : [];
   const tmList    = objId ? (TM_ON_OBJECTS[objId]    || []) : [];
   const envFields = wt?.env_fields || {};
+
+  // Фильтрация оборудования: только с отклонениями и без назначенных дефектов
+  const equipList = equipListRaw.filter(eq => {
+    // Собираем все протоколы для этого объекта
+    const objProtocols = protocols.filter(p => p.object_id === objId);
+    // Ищем отклонения для этого оборудования
+    let hasDeviation = false;
+    let hasDefect = false;
+    
+    for (const prot of objProtocols) {
+      // Проверяем режим single equipment
+      if (prot.mode === "equipment" && prot.equip_id === eq.id) {
+        const badRows = (prot.rows || []).filter(r => r.auto_status === "error" || r.manual_status === "Предельное состояние");
+        if (badRows.length > 0) hasDeviation = true;
+        if ((prot.defects || []).some(d => d.entity_id === eq.id)) hasDefect = true;
+      }
+      // Проверяем режим equip_list
+      if (prot.mode === "equip_list") {
+        const group = (prot.equip_groups || []).find(g => g.equip_id === eq.id);
+        if (group) {
+          const badRows = (group.rows || []).filter(r => r.auto_status === "error" || r.manual_status === "Предельное состояние");
+          if (badRows.length > 0) hasDeviation = true;
+        }
+        if ((prot.defects || []).some(d => d.entity_id === eq.id)) hasDefect = true;
+      }
+    }
+    
+    // Включаем оборудование если есть отклонение и нет дефекта
+    return hasDeviation && !hasDefect;
+  });
 
   const activeInstruments = instruments.filter(i => !i.archived);
 
   // Инициализация из editProtocol при редактировании
+  // или сброс при создании нового протокола
   useEffect(() => {
-    if (!editProtocol) return;
+    if (!editProtocol) {
+      // Сброс всех полей при создании нового протокола
+      setStep(0);
+      setObjId(null);
+      setWtId(null);
+      setMode(null);
+      setEquipId(null);
+      setSelTMs([]);
+      setSelEquips([]);
+      setExecIds([]);
+      setReviewerId(null);
+      setInstrIds([]);
+      setDeptId(null);
+      setEnv({});
+      form.resetFields();
+      return;
+    }
     setObjId(editProtocol.object_id || null);
     setWtId(editProtocol.work_type_id || null);
     setMode(editProtocol.mode || null);
