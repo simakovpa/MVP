@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Card, Table, Select, Typography, Space, Tag, DatePicker,
-  Empty, Button, Drawer, Timeline, Statistic, Row, Col, Divider
+  Empty, Button, Drawer, Timeline, Statistic, Row, Col, Divider, Modal
 } from "antd";
 import {
   HistoryOutlined, InfoCircleOutlined,
@@ -13,6 +13,7 @@ import {
   PARAMS, WORK_TYPES, EMPLOYEES
 } from "../data/mockData";
 import { calcZoneStatus, getEffectiveStatus } from "../utils/helpers";
+import ProtocolCard from "./ProtocolCard";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -172,6 +173,8 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
   const [dateRange, setDateRange] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [modalProt, setModalProt] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Полная история всех измерений
   const allHistory = useMemo(() => buildAllHistory(protocols), [protocols]);
@@ -272,7 +275,7 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
       key: "protocol_number",
       width: 160,
       render: (v, r) => (
-        <Button type="link" onClick={() => onOpenProtocol && onOpenProtocol(protocols.find(p => p.id === r.protocol_id))} style={{ padding: 0 }}>
+        <Button type="link" onClick={() => { const p = protocols.find(p => p.id === r.protocol_id); if (p) { setModalProt(p); setModalOpen(true); }}} style={{ padding: 0 }}>
           {v}
         </Button>
       ),
@@ -509,7 +512,7 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
           <div>
             <Descriptions column={1} bordered size="small">
               <Descriptions.Item label="Протокол">
-                <Button type="link" onClick={() => onOpenProtocol && onOpenProtocol(drawerItem.protocol_id)} style={{ padding: 0 }}>
+                <Button type="link" onClick={() => { setDrawerOpen(false); const p = protocols.find(p => p.id === drawerItem.protocol_id); if (p) { setModalProt(p); setModalOpen(true); }}} style={{ padding: 0 }}>
                   {drawerItem.protocol_number}
                 </Button>
               </Descriptions.Item>
@@ -585,6 +588,26 @@ export default function HistoryScreen({ protocols, workTypes, params, instrument
           </div>
         )}
       </Drawer>
+
+      {/* Модальное окно протокола измерений */}
+      <Modal
+        title={`Протокол ${modalProt?.number || ""}`}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        width={1200}
+        footer={null}
+        centered
+      >
+        {modalProt && (
+          <ProtocolCard
+            prot={modalProt}
+            workTypes={workTypes}
+            params={params}
+            instruments={instruments}
+            onBack={() => setModalOpen(false)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
