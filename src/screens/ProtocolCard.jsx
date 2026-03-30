@@ -651,7 +651,36 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
               {!prot.defects?.length
                 ? <Empty description="Дефекты не зафиксированы" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
                 : prot.defects.map(d=>{
-                    const badRowsInfo = d.badRows || [];
+                    // Пытаемся получить информацию об отклонениях
+                    let badRowsInfo = d.badRows || [];
+                    // Если badRows не сохранены в дефекте - извлекаем из текущего протокола
+                    // с учётом привязки к конкретной сущности (entity_id)
+                    if (badRowsInfo.length === 0 && d.entity_id) {
+                      let allRows = [];
+                      if (prot.mode === "equipment") {
+                        allRows = prot.rows || [];
+                      } else if (prot.mode === "tm_list") {
+                        const group = (prot.tm_groups || []).find(g => g.tm_id === d.entity_id);
+                        allRows = group?.rows || [];
+                      } else if (prot.mode === "equip_list") {
+                        const group = (prot.equip_groups || []).find(g => g.equip_id === d.entity_id);
+                        allRows = group?.rows || [];
+                      }
+                      const entityRows = allRows.filter(r => {
+                        const s = getEffectiveStatus(r);
+                        return s.color === "error" || s.color === "warning";
+                      });
+                      badRowsInfo = entityRows.map(r => {
+                        const s = getEffectiveStatus(r);
+                        return {
+                          param_name: r.param_name,
+                          unit: r.unit,
+                          fact: r.fact,
+                          zone_label: s.label,
+                          zone_color: s.color
+                        };
+                      });
+                    }
                     const descMatch = d.description?.match(/Без норматива: (\d+)/);
                     const undefinedCount = descMatch ? parseInt(descMatch[1]) : 0;
                     return (
