@@ -4,7 +4,8 @@ import {
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, ControlOutlined,
-  ThunderboltOutlined, SafetyCertificateOutlined, HistoryOutlined
+  ThunderboltOutlined, SafetyCertificateOutlined, HistoryOutlined,
+  SettingOutlined, LogoutOutlined, UserOutlined
 } from "@ant-design/icons";
 import {
   INIT_PROTOCOLS, INIT_NORM_RANGES, INIT_PASSPORT_NORMS,
@@ -18,21 +19,22 @@ import NormativesScreen, { LabsScreen } from "./screens/NormativesScreen";
 import InstrumentsScreen from "./screens/InstrumentsScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 
-const { Sider, Content } = Layout;
+const { Sider, Content, Header } = Layout;
 const { Text } = Typography;
 
 // ─── Тема ─────────────────────────────────────────────────────────────────────
 const theme = {
   token: {
-    colorPrimary: "#1a5fa8", colorBgContainer: "#ffffff",
+    colorPrimary: "#1677ff", colorBgContainer: "#ffffff",
     colorBgLayout: "#f0f2f5", borderRadius: 6,
     fontFamily: "'IBM Plex Sans','Segoe UI',sans-serif",
     fontSize: 13, colorTextBase: "#1a1a2e",
   },
   components: {
-    Table: { headerBg:"#f0f4f8", borderColor:"#dde3ec", rowHoverBg:"#f5f8ff" },
-    Menu:  { itemBg:"#0f2744", itemColor:"#a8bdd4", itemHoverBg:"#1a3a5c",
-             itemSelectedBg:"#1a5fa8", itemSelectedColor:"#ffffff", subMenuItemBg:"#0a1e35" },
+    Table: { headerBg:"#fafafa", borderColor:"#f0f0f0", rowHoverBg:"#f5f5f5" },
+    Menu: { itemBg:"#ffffff", itemColor:"rgba(0,0,0,0.88)", itemHoverBg:"#f5f5f5",
+             itemSelectedBg:"#e6f4ff", itemSelectedColor:"#1677ff", darkItemBg:"#ffffff", darkItemColor:"rgba(0,0,0,0.88)" },
+    Layout: { headerBg:"#ffffff", siderBg:"#ffffff", bodyBg:"#f0f2f5", headerHeight:56 },
   }
 };
 
@@ -125,40 +127,109 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background:#c1ccd9; border-radius:3px; }
       `}</style>
       <Layout style={{ minHeight:"100vh", width:"100%", display:"flex" }}>
-        <Sider width={220} collapsible={false} style={{ position:"sticky", top:0, height:"100vh", overflow:"auto", flexShrink:0 }}>
+        
+        {/* Header - как в ОРЭО */}
+        <Header style={{ 
+          background: '#fff', 
+          padding: '0 24px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #f0f0f0',
+          height: 56,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}>
           {/* Логотип */}
-          <div style={{ padding:"16px 14px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)",
-            display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:30,height:30,borderRadius:8,
-              background:"linear-gradient(135deg,#1a5fa8,#4d9de0)",
-              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0 }}>⚡</div>
-            <div>
-              <div style={{ color:"#fff",fontWeight:700,fontSize:12,lineHeight:1.2 }}>ЭТЛ Модуль</div>
-              <div style={{ color:"#6b8fa8",fontSize:10 }}>Испытания и измерения</div>
-            </div>
-          </div>
-
-          <Menu mode="inline" selectedKeys={[menuKey]} items={menuItems}
-            onClick={onMenu} style={{ borderRight:"none",paddingTop:8 }}/>
-
-          {/* Статистика в сайдбаре */}
-          <div style={{ padding:"14px 12px", borderTop:"1px solid rgba(255,255,255,0.06)", marginTop:8 }}>
-            {[
-              { l:"Черновики",       v:protocols.filter(p=>p.status==="Черновик").length,     c:"#6b8fa8" },
-              { l:"На проверке",     v:protocols.filter(p=>p.status==="На проверке").length,   c:"#4d9de0" },
-              { l:"Ожидают ЭТЛ",    v:newNomCount,                                            c:"#eb2f96" },
-              { l:"Просрочено приборов", v:expiredCount,                                       c:"#ff4d4f" },
-            ].map(x=>(
-              <div key={x.l} style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
-                <span style={{ color:"#6b8fa8",fontSize:11 }}>{x.l}</span>
-                <span style={{ color:x.c,fontWeight:700,fontSize:12 }}>{x.v}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/" style={{ display: 'inline-block', lineHeight: 0 }}>
+              <div style={{ 
+                width: 34, 
+                height: 34, 
+                background: 'linear-gradient(135deg, #1677ff, #4096ff)',
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 16
+              }}>
+                Э
               </div>
-            ))}
+            </a>
+            {/* Название приложения */}
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
+              ЭТЛ Модуль
+            </span>
           </div>
-        </Sider>
+          
+          {/* Правая часть header - настройки и профиль */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <a href="/admin" style={{ color: 'rgba(0,0,0,0.88)', lineHeight: 0 }}>
+              <SettingOutlined style={{ fontSize: 18 }} />
+            </a>
+            <a href="/profile" style={{ width: 24, height: 24, lineHeight: 0 }}>
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: '#e6f4ff',
+                color: '#1677ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12
+              }}>
+                <UserOutlined />
+              </div>
+            </a>
+            <span style={{ cursor: 'pointer', color: 'rgba(0,0,0,0.88)' }}>
+              <LogoutOutlined style={{ fontSize: 18 }} />
+            </span>
+          </div>
+        </Header>
+        
+        <Layout style={{ flex: 1, marginTop: 0 }}>
+          <Sider width={260} collapsible={false} 
+            style={{ 
+              position: 'sticky', 
+              top: 56, 
+              height: 'calc(100vh - 56px)', 
+              overflow: 'auto', 
+              flexShrink: 0,
+              background: '#ffffff',
+              borderRight: '1px solid #f0f0f0'
+            }}>
+            {/* Меню в сайдбаре */}
+            <Menu mode="inline" selectedKeys={[menuKey]} items={menuItems}
+              onClick={onMenu} 
+              style={{ 
+                borderRight: 'none', 
+                paddingTop: 8,
+                background: '#ffffff',
+                color: 'rgba(0,0,0,0.88)'
+              }}/>
 
-        <Layout style={{ flex:1, minWidth:0, overflow:"hidden" }}>
-          <Content style={{ background:"#f0f2f5", minHeight:"100vh", overflow:"auto" }}>
+            {/* Статистика в сайдбаре */}
+            <div style={{ padding:"14px 12px", borderTop:"1px solid #f0f0f0", marginTop:8 }}>
+              {[
+                { l:"Черновики",       v:protocols.filter(p=>p.status==="Черновик").length,     c:"#8c8c8c" },
+                { l:"На проверке",     v:protocols.filter(p=>p.status==="На проверке").length,   c:"#1890ff" },
+                { l:"Ожидают ЭТЛ",    v:newNomCount,                                            c:"#eb2f96" },
+                { l:"Просрочено приборов", v:expiredCount,                                       c:"#ff4d4f" },
+              ].map(x=>(
+                <div key={x.l} style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
+                  <span style={{ color:"#8c8c8c",fontSize:11 }}>{x.l}</span>
+                  <span style={{ color:x.c,fontWeight:700,fontSize:12 }}>{x.v}</span>
+                </div>
+              ))}
+            </div>
+          </Sider>
+
+          <Layout style={{ flex:1, minWidth:0, overflow:"hidden" }}>
+            <Content style={{ background:"#f0f2f5", minHeight:"calc(100vh - 56px)", overflow:"auto" }}>
             {screen==="list" && (
               <ProtocolList
                 protocols={protocols} workTypes={workTypes} params={params} instruments={instruments}
@@ -217,6 +288,7 @@ export default function App() {
               />
             )}
           </Content>
+          </Layout>
         </Layout>
       </Layout>
     </ConfigProvider>

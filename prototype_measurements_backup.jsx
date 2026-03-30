@@ -14,9 +14,7 @@ import {
   ThunderboltOutlined, ApartmentOutlined, HomeOutlined,
   WarningOutlined, InfoCircleOutlined, ReloadOutlined,
   CalendarOutlined, TeamOutlined, EnvironmentOutlined,
-  FileProtectOutlined, SafetyCertificateOutlined,
-  GlobalOutlined, BarsOutlined, SnippetsOutlined, LogoutOutlined,
-  FileSearchOutlined, ReconciliationOutlined, LeftSquareOutlined
+  FileProtectOutlined, SafetyCertificateOutlined
 } from "@ant-design/icons";
 
 const { Header, Sider, Content } = Layout;
@@ -27,13 +25,13 @@ const { Panel } = Collapse;
 // ─── ANT DESIGN ТОКЕН ──────────────────────────────────────────────────────
 const theme = {
   token: {
-    colorPrimary: "#1677ff",
+    colorPrimary: "#1a5fa8",
     colorBgContainer: "#ffffff",
     colorBgLayout: "#f0f2f5",
     borderRadius: 6,
     fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif",
     fontSize: 13,
-    colorLink: "#1677ff",
+    colorLink: "#1a5fa8",
     colorSuccess: "#389e0d",
     colorWarning: "#d46b08",
     colorError: "#cf1322",
@@ -42,22 +40,7 @@ const theme = {
   },
   components: {
     Table: { headerBg: "#f0f4f8", borderColor: "#dde3ec", rowHoverBg: "#f5f8ff" },
-    Menu: {
-      // Цвета как в ОРЭО
-      // Светлая тема (Header)
-      itemBg: 'transparent',
-      itemColor: 'rgba(0,0,0,0.88)',
-      itemHoverBg: '#f5f5f5',
-      itemSelectedBg: '#e6f4ff',
-      itemSelectedColor: '#1677ff',
-      // Тёмная тема (Sidebar)
-      darkItemBg: '#001529',
-      darkItemColor: 'rgba(255,255,255,0.65)',
-      darkItemHoverBg: 'transparent',
-      darkItemSelectedBg: '#1677ff',
-      darkItemSelectedColor: '#ffffff',
-      darkSubMenuItemBg: '#000c17',
-    },
+    Menu: { itemBg: "#0f2744", itemColor: "#a8bdd4", itemHoverBg: "#1a3a5c", itemSelectedBg: "#1a5fa8", itemSelectedColor: "#ffffff", subMenuItemBg: "#0a1e35" },
     Card: { headerBg: "#f8fafc" },
     Steps: { iconSize: 28 },
   }
@@ -1169,12 +1152,11 @@ export default function App() {
   const [protocols, setProtocols] = useState(initProtocols);
   const [screen, setScreen] = useState("list"); // list | card | create | refs
   const [activeProtId, setActiveProtId] = useState(null);
-  const [menuKey, setMenuKey] = useState("measurements");
-  const [siderCollapsed, setSiderCollapsed] = useState(false);
+  const [menuKey, setMenuKey] = useState("protocols");
 
   const activeProt = protocols.find(p => p.id === activeProtId);
 
-  function openProtocol(id) { setActiveProtId(id); setScreen("card"); setMenuKey("measurements"); }
+  function openProtocol(id) { setActiveProtId(id); setScreen("card"); setMenuKey("protocols"); }
   function handleUpdate(updated) {
     setProtocols(prev => prev.map(p => p.id === updated.id ? updated : p));
   }
@@ -1184,26 +1166,17 @@ export default function App() {
     setScreen("card");
   }
 
-  // Меню в Sidebar (тёмное) - как в ОРЭО
-  const siderItems = [
-    { key: "inspection-sheets", icon: <FileSearchOutlined />, label: <a>Листы осмотра</a> },
-    { key: "templates", icon: <ReconciliationOutlined />, label: <a>Шаблоны листа осмотра</a> },
-    { key: "measurements", icon: <ThunderboltOutlined />, label: <a>Испытания и измерения</a> },
+  const menuItems = [
+    { key: "protocols", icon: <FileProtectOutlined />, label: "Протоколы" },
+    { key: "create",    icon: <PlusOutlined />,        label: "Создать протокол" },
+    { type: "divider" },
+    { key: "refs",      icon: <SettingOutlined />,     label: "Справочники" },
   ];
 
-  // Горизонтальное меню в Header - как в ОРЭО
-  const headerMenuItems = [
-    { key: "system-objects", icon: <ApartmentOutlined />, label: <a href="/system-objects">Система сети</a> },
-    { key: "gis", icon: <GlobalOutlined />, label: <a href="/gis">ГИС</a> },
-    { key: "registries", icon: <BarsOutlined />, label: <a href="/registries">Реестры</a> },
-    { key: "tasks", icon: <SnippetsOutlined />, label: <a href="/tasks">Обходы</a> },
-    { key: "defect-detection", icon: <BugOutlined />, label: <a href="/defect-detection">Дефектовка</a> },
-  ];
-
-  function handleSiderMenu({ key }) {
-    if (key === "measurements") { setScreen("list"); setMenuKey("measurements"); }
-    else if (key === "inspection-sheets") { setScreen("list"); setMenuKey("inspection-sheets"); }
-    else if (key === "templates") { setScreen("refs"); setMenuKey("templates"); }
+  function handleMenu({ key }) {
+    if (key === "create") { setScreen("create"); setMenuKey("create"); }
+    else if (key === "protocols") { setScreen("list"); setMenuKey("protocols"); }
+    else if (key === "refs") { setScreen("refs"); setMenuKey("refs"); }
   }
 
   return (
@@ -1221,128 +1194,62 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #c1ccd9; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #8fa8c4; }
       `}</style>
-      <Layout style={{ minHeight: "100vh" }}>
-        {/* Header - верхняя панель */}
-        <Header style={{
-          background: '#fff',
-          padding: '0 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid #d9d9d9',
-          height: 64,
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {/* Логотип */}
-            <a href="/" style={{ display: 'inline-block', lineHeight: 0, marginRight: 24 }}>
+      <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+        {/* Сайдбар */}
+        <Sider width={220} collapsible={false} style={{ position: "sticky", top: 0, height: "100vh", overflow: "auto" }}>
+          <div style={{
+            padding: "18px 16px 14px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
-                width: 34,
-                height: 34,
-                background: 'linear-gradient(135deg, #0f2744, #1a5fa8)',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{ fontSize: 16, color: '#fff' }}>⚡</span>
+                width: 32, height: 32, borderRadius: 8,
+                background: "linear-gradient(135deg, #1a5fa8, #4d9de0)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, color: "#fff", flexShrink: 0
+              }}>⚡</div>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>ЭТЛ Модуль</div>
+                <div style={{ color: "#6b8fa8", fontSize: 10, lineHeight: 1.3 }}>Испытания и измерения</div>
               </div>
-            </a>
-
-            {/* Горизонтальное меню */}
-            <Menu
-              mode="horizontal"
-              theme="light"
-              selectedKeys={['measurements']}
-              items={headerMenuItems}
-              style={{ minWidth: 500, borderBottom: 'none', background: 'transparent' }}
-            />
-          </div>
-
-          {/* Правая часть Header */}
-          <Space size={16}>
-            <a href="/admin" style={{ color: 'rgba(0,0,0,0.88)' }}>
-              <SettingOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-            </a>
-            <Avatar style={{ backgroundColor: '#e6f4ff', color: '#1677ff' }}>AA</Avatar>
-            <LogoutOutlined style={{ fontSize: 18, cursor: 'pointer', color: 'rgba(0,0,0,0.65)' }} />
-          </Space>
-        </Header>
-
-        <Layout>
-          {/* Sidebar - боковая панель (тёмная) */}
-          <Sider
-            width={365}
-            theme="dark"
-            collapsedWidth={80}
-            collapsible={true}
-            collapsed={siderCollapsed}
-            onCollapse={setSiderCollapsed}
-            style={{
-              background: '#001529',
-              flex: '0 0 365px',
-              maxWidth: 365,
-              minWidth: 365,
-              position: 'sticky',
-              top: 64,
-              height: 'calc(100vh - 64px)',
-              overflow: 'auto'
-            }}
-          >
-            <Menu
-              theme="dark"
-              mode="inline"
-              selectedKeys={[menuKey]}
-              onClick={handleSiderMenu}
-              defaultSelectedKeys={['measurements']}
-              style={{
-                background: '#001529',
-                borderRight: 'none'
-              }}
-              items={siderItems}
-            />
-
-            {/* Триггер сворачивания */}
-            <div
-              className="ant-layout-sider-trigger"
-              style={{
-                width: 365,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 16px',
-                background: '#000c17',
-                borderTop: '1px solid rgba(255,255,255,0.06)'
-              }}
-            >
-              <span style={{ color: 'rgba(0,0,0,0.88)' }}>
-                {siderCollapsed ? '' : 'Свернуть'}
-              </span>
-              <LeftSquareOutlined style={{ color: 'rgba(0,0,0,0.65)', fontSize: 28 }} />
             </div>
-          </Sider>
+          </div>
+          <Menu mode="inline" selectedKeys={[menuKey]} items={menuItems} onClick={handleMenu}
+            style={{ borderRight: "none", paddingTop: 8 }} />
 
-          {/* Контент */}
-          <Layout>
-            <Content style={{ padding: 24, background: '#f0f2f5', minHeight: 'calc(100vh - 64px)' }}>
-              {screen === "list" && (
-                <ProtocolList protocols={protocols}
-                  onOpen={openProtocol}
-                  onCreate={() => { setScreen("create"); setMenuKey("measurements"); }} />
-              )}
-              {screen === "card" && activeProt && (
-                <ProtocolCard prot={activeProt} onBack={() => { setScreen("list"); setMenuKey("measurements"); }} onUpdate={handleUpdate} />
-              )}
-              {screen === "create" && (
-                <CreateProtocolForm protocols={protocols}
-                  onSave={handleCreate}
-                  onCancel={() => { setScreen("list"); setMenuKey("measurements"); }} />
-              )}
-              {screen === "refs" && <References />}
-            </Content>
-          </Layout>
+          {/* Мини-дашборд в сайдбаре */}
+          <div style={{ padding: "16px 12px", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: "auto" }}>
+            {[
+              { label: "Черновики", count: protocols.filter(p => p.status === "Черновик").length, color: "#6b8fa8" },
+              { label: "На проверке", count: protocols.filter(p => p.status === "На проверке").length, color: "#4d9de0" },
+              { label: "С отклонениями", count: protocols.filter(p => countDeviations(p) > 0 && p.status !== "Аннулирован").length, color: "#e05c4d" },
+            ].map(item => (
+              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ color: "#6b8fa8", fontSize: 11 }}>{item.label}</span>
+                <span style={{ color: item.color, fontWeight: 700, fontSize: 12 }}>{item.count}</span>
+              </div>
+            ))}
+          </div>
+        </Sider>
+
+        {/* Контент */}
+        <Layout>
+          <Content style={{ background: "#f0f2f5", minHeight: "100vh" }}>
+            {screen === "list" && (
+              <ProtocolList protocols={protocols}
+                onOpen={openProtocol}
+                onCreate={() => { setScreen("create"); setMenuKey("create"); }} />
+            )}
+            {screen === "card" && activeProt && (
+              <ProtocolCard prot={activeProt} onBack={() => { setScreen("list"); setMenuKey("protocols"); }} onUpdate={handleUpdate} />
+            )}
+            {screen === "create" && (
+              <CreateProtocolForm protocols={protocols}
+                onSave={handleCreate}
+                onCancel={() => { setScreen("list"); setMenuKey("protocols"); }} />
+            )}
+            {screen === "refs" && <References />}
+          </Content>
         </Layout>
       </Layout>
     </ConfigProvider>
