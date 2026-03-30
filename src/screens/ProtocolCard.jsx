@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col,
+  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col, InputNumber,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  InputNumber, notification, Divider, Form, message, Radio
+  notification, Divider, Form, message, Radio
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
@@ -102,6 +102,19 @@ function EquipListTable({ prot, makeRowCols }) {
 
 export default function ProtocolCard({ prot, workTypes, params, instruments, onBack, onUpdate }) {
   const [api, ctx] = notification.useNotification();
+  const [env, setEnv] = useState(prot.env || {});
+
+  // Sync env from prot when prop changes
+  useEffect(() => {
+    setEnv(prot.env || {});
+  }, [prot.env]);
+
+  const handleEnvChange = (field, value) => {
+    const newEnv = { ...env, [field]: value };
+    setEnv(newEnv);
+    const updated = { ...prot, env: newEnv };
+    onUpdate(updated);
+  };
   const [conclusionModal, setConclusionModal] = useState(false);
   const [conclusionType,  setConclusionType]  = useState(null);
   const [conclusionText,  setConclusionText]  = useState("");
@@ -494,6 +507,59 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           key:"rows", label:"Результаты измерений",
           children:(
             <Card size="small" style={{ borderRadius:8 }}>
+              {/* Условия измерений - вверху страницы */}
+              {(isEditable || env.temp !== undefined || env.humidity !== undefined || env.pressure !== undefined) && (
+                <div style={{ marginBottom:16, padding:12, background:"#f8fafc", borderRadius:6, border:"1px solid #e8ecef" }}>
+                  <Text strong style={{ fontSize:13, display:"block", marginBottom:8 }}>Условия измерений</Text>
+                  {isEditable ? (
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item label="Температура">
+                          <InputNumber 
+                            value={env.temp} 
+                            onChange={v => handleEnvChange('temp', v)}
+                            min={-50} max={60} 
+                            style={{ width:"100%" }}
+                            placeholder="°C"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item label="Влажность">
+                          <InputNumber 
+                            value={env.humidity} 
+                            onChange={v => handleEnvChange('humidity', v)}
+                            min={0} max={100} 
+                            style={{ width:"100%" }}
+                            placeholder="%"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item label="Давление">
+                          <InputNumber 
+                            value={env.pressure} 
+                            onChange={v => handleEnvChange('pressure', v)}
+                            min={600} max={900} 
+                            style={{ width:"100%" }}
+                            placeholder="мм рт.ст"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  ) : (
+                    <Descriptions size="small" column={3} bordered
+                      labelStyle={{ background:"#f0f4f8",fontWeight:600,fontSize:12 }}
+                      contentStyle={{ fontSize:12 }}
+                      items={[
+                        { key:"temp", label:"Температура", children: <><Text strong>{env.temp !== undefined ? env.temp : '—'}</Text> <Text type="secondary">°C</Text></> },
+                        { key:"humidity", label:"Влажность", children: <><Text strong>{env.humidity !== undefined ? env.humidity : '—'}</Text> <Text type="secondary">%</Text></> },
+                        { key:"pressure", label:"Давление", children: <><Text strong>{env.pressure !== undefined ? env.pressure : '—'}</Text> <Text type="secondary">мм рт.ст</Text></> },
+                      ]}
+                    />
+                  )}
+                </div>
+              )}
               {prot.mode==="equipment" && (
                 <Table dataSource={prot.rows||[]} columns={makeRowCols()} rowKey="id" size="small" pagination={false}
                   rowClassName={r=>{ const s=getEffectiveStatus(r); return s.color==="error"?"row-err":s.color==="warning"?"row-warn-row":""; }}/>

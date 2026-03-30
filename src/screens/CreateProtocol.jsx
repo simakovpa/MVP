@@ -50,7 +50,8 @@ export default function CreateProtocol({
   const [reviewerId, setReviewerId] = useState(null);
   const [instrIds, setInstrIds]     = useState([]);
   const [deptId, setDeptId]         = useState(null);
-  const [env, setEnv]               = useState({});
+  // env fields (temp, humidity, pressure) now filled in ProtocolCard when status is "В работе"
+  // const [env, setEnv] = useState({});
 
   const wt        = workTypes.find(w => w.id === wtId);
   const equipListRaw = objId ? (EQUIP_ON_OBJECTS[objId] || []) : [];
@@ -105,7 +106,7 @@ export default function CreateProtocol({
       setReviewerId(null);
       setInstrIds([]);
       setDeptId(null);
-      setEnv({});
+      // setEnv({}); // env now filled in ProtocolCard
       form.resetFields();
       return;
     }
@@ -119,7 +120,7 @@ export default function CreateProtocol({
     setReviewerId(editProtocol.reviewer_id || null);
     setInstrIds(editProtocol.instrument_ids || []);
     setDeptId(editProtocol.dept_id || null);
-    setEnv(editProtocol.env || {});
+    // setEnv(editProtocol.env || {}); // env now filled in ProtocolCard
     if (editProtocol.object_id && editProtocol.work_type_id && editProtocol.mode) {
       setStep(1);
       if ((editProtocol.mode === "equipment" && editProtocol.equip_id) ||
@@ -194,10 +195,8 @@ export default function CreateProtocol({
       });
     }
 
+    // envData will be filled in ProtocolCard when status is "В работе"
     const envData = {};
-    if (envFields.temp     && env.temp     !== undefined) envData.temp     = env.temp;
-    if (envFields.humidity && env.humidity !== undefined) envData.humidity = env.humidity;
-    if (envFields.pressure && env.pressure !== undefined) envData.pressure = env.pressure;
 
     const newProt = {
       id: isEditMode ? editProtocol.id : uid(),
@@ -438,44 +437,8 @@ export default function CreateProtocol({
         {/* ─── ШАГ 3 ───────────────────────────────────────────────────────── */}
         {step === 2 && (
           <Card style={{ borderRadius:8 }}>
-            {/* Условия измерений — только поля из настройки вида работы */}
-            {(envFields.temp || envFields.humidity || envFields.pressure) ? (
-              <div style={{ marginBottom:16 }}>
-                <Text strong style={{ fontSize:13 }}>Условия измерений</Text>
-                <Text type="secondary" style={{ fontSize:11, marginLeft:8 }}>
-                  (все поля необязательные)
-                </Text>
-                <Row gutter={12} style={{ marginTop:10 }}>
-                  {envFields.temp && (
-                    <Col span={8}>
-                      <Form.Item label="Температура воздуха, °C">
-                        <InputNumber value={env.temp} onChange={v=>setEnv(e=>({...e,temp:v}))}
-                          min={-50} max={60} style={{ width:"100%" }}/>
-                      </Form.Item>
-                    </Col>
-                  )}
-                  {envFields.humidity && (
-                    <Col span={8}>
-                      <Form.Item label="Относительная влажность, %">
-                        <InputNumber value={env.humidity} onChange={v=>setEnv(e=>({...e,humidity:v}))}
-                          min={0} max={100} style={{ width:"100%" }}/>
-                      </Form.Item>
-                    </Col>
-                  )}
-                  {envFields.pressure && (
-                    <Col span={8}>
-                      <Form.Item label="Атм. давление, мм рт. ст.">
-                        <InputNumber value={env.pressure} onChange={v=>setEnv(e=>({...e,pressure:v}))}
-                          min={600} max={900} style={{ width:"100%" }}/>
-                      </Form.Item>
-                    </Col>
-                  )}
-                </Row>
-              </div>
-            ) : (
-              <Alert type="default" showIcon style={{ marginBottom:16 }}
-                message="Для данного вида работы параметры среды не настроены"/>
-            )}
+            <Alert type="info" showIcon style={{ marginBottom:16 }}
+              message="Параметры окружающей среды (температура, влажность, давление) заполняются на форме внесения данных измерений" />
 
             <Form.Item label="Напряжение испытания, кВ" name="voltage_test">
               <InputNumber min={0} style={{ width:"100%" }}/>
