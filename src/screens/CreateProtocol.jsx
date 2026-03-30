@@ -129,11 +129,7 @@ export default function CreateProtocol({
         setStep(2);
       }
     }
-    form.setFieldsValue({
-      date_measured: editProtocol.date_measured,
-      lab_id: editProtocol.lab_id,
-      voltage_test: editProtocol.voltage_test,
-    });
+    form.setFieldsValue({ date_measured: editProtocol.date_measured });
   }, [editProtocol]);
 
   const can1 = objId && wtId && mode;
@@ -224,7 +220,7 @@ export default function CreateProtocol({
           };
         });
       })() : undefined,
-      env:envData, voltage_test:vals.voltage_test || null,
+      env:envData,
       status:"В работе", date_signed:null, signed_by:null,
       conclusion_type:null, conclusion_text:"", cancel_reason:null, defects:[],
       rows, tm_groups,
@@ -439,10 +435,6 @@ export default function CreateProtocol({
           <Card style={{ borderRadius:8 }}>
             <Alert type="info" showIcon style={{ marginBottom:16 }}
               message="Параметры окружающей среды (температура, влажность, давление) заполняются на форме внесения данных измерений" />
-
-            <Form.Item label="Напряжение испытания, кВ" name="voltage_test">
-              <InputNumber min={0} style={{ width:"100%" }}/>
-            </Form.Item>
 
             {/* Измерительные приборы */}
             <Divider/>
