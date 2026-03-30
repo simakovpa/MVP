@@ -182,8 +182,12 @@ export default function CreateProtocol({
           tm_id:tmId, tm_name:tm?.name || tmId,
           rows: wt.params.map(pt => {
             const pr = params.find(p => p.id === pt.param_id);
+            // Для ТМ ищем нормативы по work_type_id и param_id (без привязки к типу оборудования)
+            const nr = normRanges.find(x => x.param_id === pt.param_id && x.work_type_id === wt.id);
+            const zones = nr ? nr.zones : [];
+            const source = nr ? nr.source : "";
             return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
-              zones:[], norm_source:"", fact:null, note:"",
+              zones, norm_source:source, fact:null, note:"",
               auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
           })
         };

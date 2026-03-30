@@ -11,7 +11,7 @@ import {
   WarningOutlined, SwapOutlined, QuestionCircleOutlined, CalendarOutlined,
   TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined
 } from "@ant-design/icons";
-import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel, EQUIP_ON_OBJECTS } from "../data/mockData";
+import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel, EQUIP_ON_OBJECTS, TM_ON_OBJECTS } from "../data/mockData";
 import {
   getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus
 } from "../utils/helpers";
@@ -138,16 +138,26 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       const badRows = (prot.rows || []).filter(r => {
         const s = getEffectiveStatus(r);
         return s.color === "error" || s.color === "warning";
+      }).map(r => {
+        const s = getEffectiveStatus(r);
+        return {
+          param_name: r.param_name,
+          unit: r.unit,
+          fact: r.fact,
+          zone_label: s.label,
+          zone_color: s.color
+        };
       });
       if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
         // Критичность дефекта - максимальная из отклонений
-        const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+        const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
         entities.push({
           type: "equipment",
           id: equip.id,
           name: equip.name,
           severity: maxSeverity,
-          deviationCount: badRows.length
+          deviationCount: badRows.length,
+          badRows: badRows
         });
       }
     } else if (prot.mode === "tm_list") {
@@ -156,15 +166,25 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
         const badRows = (g.rows || []).filter(r => {
           const s = getEffectiveStatus(r);
           return s.color === "error" || s.color === "warning";
+        }).map(r => {
+          const s = getEffectiveStatus(r);
+          return {
+            param_name: r.param_name,
+            unit: r.unit,
+            fact: r.fact,
+            zone_label: s.label,
+            zone_color: s.color
+          };
         });
         if (badRows.length > 0 && !existingDefectEntityIds.includes(g.tm_id)) {
-          const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+          const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
           entities.push({
             type: "tm",
             id: g.tm_id,
             name: g.tm_name,
             severity: maxSeverity,
-            deviationCount: badRows.length
+            deviationCount: badRows.length,
+            badRows: badRows
           });
         }
       });
@@ -175,15 +195,25 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
         const badRows = (g.rows || []).filter(r => {
           const s = getEffectiveStatus(r);
           return s.color === "error" || s.color === "warning";
+        }).map(r => {
+          const s = getEffectiveStatus(r);
+          return {
+            param_name: r.param_name,
+            unit: r.unit,
+            fact: r.fact,
+            zone_label: s.label,
+            zone_color: s.color
+          };
         });
         if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
-          const maxSeverity = badRows.some(r => getEffectiveStatus(r).color === "error") ? "error" : "warning";
+          const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
           entities.push({
             type: "equipment",
             id: equip.id,
             name: equip.name,
             severity: maxSeverity,
-            deviationCount: badRows.length
+            deviationCount: badRows.length,
+            badRows: badRows
           });
         }
       });
@@ -503,6 +533,46 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
                   { key:"tt",   label:"Тип испытаний",     children:<Tag color="blue">{prot.test_type}</Tag> },
                   { key:"lab",  label:"Лаборатория (ЭТЛ)", children:lab?.name },
                   { key:"dept", label:"Подразделение-заказчик", children:deptLabel(prot.dept_id) },
+                  { key:"eq", label:"Объекты измерений", span:2,
+                    children:(() => {
+                      if (prot.mode === "equipment") {
+                        const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === prot.equip_id);
+                        return equip ? <Text>{equip.name} <Text type="secondary">(Зав.№{equip.serial})</Text></Text> : <Text type="secondary">не указано</Text>;
+                      }
+                      if (prot.mode === "equip_list") {
+                        const groups = prot.equip_groups || [];
+                        if (groups.length === 0) return <Text type="secondary">не указаны</Text>;
+                        return (
+                          <Space direction="vertical" size={4} style={{ width:"100%" }}>
+                            {groups.map(g => {
+                              const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === g.equip_id);
+                              return <div key={g.equip_id}>
+                                <ThunderboltOutlined style={{ color:"#1a5fa8", marginRight:6 }}/>
+                                <Text>{equip?.name || g.equip_id}</Text>
+                                {equip?.serial && <Text type="secondary" style={{ fontSize:11 }}> (Зав.№{equip.serial})</Text>}
+                              </div>;
+                            })}
+                          </Space>
+                        );
+                      }
+                      if (prot.mode === "tm_list") {
+                        const groups = prot.tm_groups || [];
+                        if (groups.length === 0) return <Text type="secondary">не указаны</Text>;
+                        return (
+                          <Space direction="vertical" size={4} style={{ width:"100%" }}>
+                            {groups.map(g => {
+                              const tm = TM_ON_OBJECTS[prot.object_id]?.find(t => t.id === g.tm_id);
+                              return <div key={g.tm_id}>
+                                <ApartmentOutlined style={{ color:"#1a5fa8", marginRight:6 }}/>
+                                <Text>{tm?.name || g.tm_id}</Text>
+                              </div>;
+                            })}
+                          </Space>
+                        );
+                      }
+                      return <Text type="secondary">—</Text>;
+                    })()
+                  },
                   { key:"d",    label:"Дата измерений",    children:prot.date_measured },
                   // Условия измерений — только заполненные поля
                   ...(Object.entries(prot.env||{}).filter(([,v])=>v!==null&&v!==undefined).map(([k,v])=>({
@@ -580,7 +650,11 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
               extra={<Button size="small" icon={<BugOutlined/>} onClick={handleCreateDefect} disabled={badCount === 0 || getEntitiesWithDeviations().length === 0 || getEntitiesWithDeviations().every(e => (prot.defects || []).some(d => d.entity_id === e.id))}>Создать</Button>}>
               {!prot.defects?.length
                 ? <Empty description="Дефекты не зафиксированы" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
-                : prot.defects.map(d=>(
+                : prot.defects.map(d=>{
+                    const badRowsInfo = d.badRows || [];
+                    const descMatch = d.description?.match(/Без норматива: (\d+)/);
+                    const undefinedCount = descMatch ? parseInt(descMatch[1]) : 0;
+                    return (
                     <Alert key={d.id} type={d.severity === "error" ? "error" : "warning"} showIcon icon={<BugOutlined/>}
                       message={<Space><Text strong style={{ fontSize:12 }}>{d.title}</Text>
                         {d.severity && <Tag color={d.severity === "error" ? "red" : "orange"} style={{ fontSize: 10 }}>
@@ -594,9 +668,25 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
                       description={<Space direction="vertical" size={2}>
                         <Text type="secondary" style={{ fontSize:11 }}>{d.description} · {d.created}</Text>
                         {d.entity_name && <Text type="secondary" style={{ fontSize: 10 }}>Привязан к: {d.entity_name}</Text>}
+                        {badRowsInfo.length > 0 && (
+                          <div style={{ marginTop: 8, background: "#f5f5f5", padding: "8px 10px", borderRadius: 4 }}>
+                            <Text strong style={{ fontSize: 11 }}>Отклонения:</Text>
+                            {badRowsInfo.map((br, idx) => (
+                              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                                <Text style={{ fontSize: 11 }}>{br.param_name}:</Text>
+                                <Text strong style={{ fontSize: 11 }}>{br.fact} {br.unit}</Text>
+                                <Tag color={br.zone_color} style={{ fontSize: 10, margin: 0 }}>{br.zone_label}</Tag>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {badRowsInfo.length === 0 && undefinedCount > 0 && (
+                          <Text type="secondary" style={{ fontSize: 10, color: "#fa8c16" }}>⚠ {undefinedCount} параметр(а) без норматива</Text>
+                        )}
                       </Space>}
                       style={{ marginBottom:8 }}/>
-                  ))
+                    );
+                  })
               }
             </Card>
           )
@@ -723,15 +813,18 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           const entitiesWithDeviations = getEntitiesWithDeviations();
           const entity = defectEntity || entitiesWithDeviations[0];
           const severityLabel = entity?.severity === "error" ? "Критическое" : "Некритическое";
+          // Собираем информацию об отклонениях
+          const badRowsDetails = (entity?.badRows || []).map(br => `${br.param_name}: ${br.fact} ${br.unit} → ${br.zone_label}`).join("; ");
           const d = { 
             id:`d${Date.now()}`, 
             title:`Дефект из протокола ${prot.number}`,
-            description:`Выявлено при испытаниях. ${entity ? `Сущность: ${entity.name}. ` : ""}Критичность: ${severityLabel}. Отклонений: ${badCount}. Без норматива: ${undefinedCount}.`,
+            description:`Выявлено при испытаниях. ${entity ? `Сущность: ${entity.name}. ` : ""}Критичность: ${severityLabel}. Отклонений: ${badCount}. ${badRowsDetails ? `Параметры: ${badRowsDetails}. ` : ""}Без норматива: ${undefinedCount}.`,
             created:new Date().toISOString().slice(0,10),
             entity_type: entity?.type || null,
             entity_id: entity?.id || null,
             entity_name: entity?.name || null,
-            severity: entity?.severity || null
+            severity: entity?.severity || null,
+            badRows: entity?.badRows || []
           };
           onUpdate({...prot, defects:[...(prot.defects||[]),d]});
           setDefectModal(false); 
@@ -776,16 +869,39 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           </div>
         )}
         
-        {/* Отображение выбранной сущности (предзаполненный случай) */}
-        {defectEntity && getEntitiesWithDeviations().length === 1 && (
+        {/* Отображение выбранной сущности и её отклонений */}
+        {(defectEntity || (getEntitiesWithDeviations().length === 1 && getEntitiesWithDeviations()[0])) && (
           <div style={{ marginTop: 16, padding: 12, background: "#f6f8fa", borderRadius: 6 }}>
-            <Space>
-              <Text strong>Сущность:</Text>
-              <Text>{defectEntity.name}</Text>
-              <Tag color={defectEntity.severity === "error" ? "red" : "orange"}>
-                {defectEntity.severity === "error" ? "Критическое" : "Некритическое"}
-              </Tag>
-            </Space>
+            {(() => {
+              const entity = defectEntity || getEntitiesWithDeviations()[0];
+              return (
+                <>
+                  <Space style={{ marginBottom: 12 }}>
+                    <Text strong>Сущность:</Text>
+                    <Text>{entity.name}</Text>
+                    <Tag color={entity.severity === "error" ? "red" : "orange"}>
+                      {entity.severity === "error" ? "Критическое" : "Некритическое"}
+                    </Tag>
+                  </Space>
+                  {entity.badRows && entity.badRows.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <Text strong style={{ fontSize: 12 }}>Отклонённые параметры:</Text>
+                      <div style={{ background: "#fff", padding: 8, borderRadius: 4, marginTop: 6 }}>
+                        {entity.badRows.map((br, idx) => (
+                          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <Text style={{ fontSize: 12 }}>{br.param_name}:</Text>
+                            <Text strong style={{ fontSize: 12, color: br.zone_color === "error" ? "#cf1322" : "#fa8c16" }}>
+                              {br.fact} {br.unit}
+                            </Text>
+                            <Tag color={br.zone_color} style={{ fontSize: 10, margin: 0 }}>{br.zone_label}</Tag>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </Modal>

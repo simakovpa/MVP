@@ -303,7 +303,7 @@ export const INIT_PROTOCOLS = [
         rows:[{ ...mkRow("r5","pr3",[{id:"z7",label:"Норма",min:null,min_inc:false,max:4.0,max_inc:true,color:"success"},{id:"z8",label:"Отклонение",min:4.0,min_inc:false,max:null,max_inc:false,color:"error"}],3.2,""),
           norm_source:"Норм. диапазон · Опора ВЛ (деревянная)"}]},
       { tm_id:"tm2", tm_name:"Опора №2",
-        rows:[{ ...mkRow("r6","pr3",[],null,""), norm_source:"" }]},
+        rows:[{ ...mkRow("r6","pr3",[{id:"z7",label:"Норма",min:null,min_inc:false,max:4.0,max_inc:true,color:"success"},{id:"z8",label:"Отклонение",min:4.0,min_inc:false,max:null,max_inc:false,color:"error"}],null,""), norm_source:"Норм. диапазон · Опора ВЛ (деревянная)" }]},
     ],
     history:[{ date:"2026-03-18 11:00", user:"em4", action:"Создан (Черновик)" }]},
 ];
