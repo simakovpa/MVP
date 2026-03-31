@@ -16,6 +16,7 @@ import {
   getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus
 } from "../utils/helpers";
 import { StatusTag, RowStatusBadge, NormSourceBadge, CalTag } from "../components/shared";
+import { checkSoD, ROLES, createRoleAssignment } from "../models/RoleAssignment";
 import ProtocolPreview from "./ProtocolPreview";
 import ProtocolPrintPreview from "../components/ProtocolPrintPreview";
 
@@ -100,7 +101,7 @@ function EquipListTable({ prot, makeRowCols }) {
   );
 }
 
-export default function ProtocolCard({ prot, workTypes, params, instruments, onBack, onUpdate }) {
+export default function ProtocolCard({ prot, workTypes, params, instruments, onBack, onUpdate, currentUserId = "em1" }) {
   const [api, ctx] = notification.useNotification();
   const [env, setEnv] = useState(prot.env || {});
 
@@ -792,8 +793,12 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       <Modal title="Подписание протокола" open={conclusionModal}
         onOk={() => {
           if (!conclusionType) { api.warning({ message:"Выберите заключение" }); return; }
+          // SoD проверка: подписант не может быть одним из исполнителей
+          const sod = checkSoD(prot.executor_ids || [], currentUserId);
+          if (!sod.valid) { api.error({ message:sod.error }); return; }
           transition("Подписан", { conclusion_type:conclusionType, conclusion_text:conclusionText,
-            date_signed:new Date().toISOString().slice(0,10), signed_by:"em1" });
+            date_signed:new Date().toISOString().slice(0,10), signed_by:currentUserId,
+            role_assignment:createRoleAssignment("reviewer", currentUserId, prot.id) });
           setConclusionModal(false);
         }}
         onCancel={() => setConclusionModal(false)} okText="Подписать"
