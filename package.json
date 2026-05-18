@@ -1,15 +1,12 @@
 {
   "name": "etl-proto",
   "homepage": "https://simakovpa.github.io/measures",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
     "preview": "vite preview"
-  },
+  }
+}
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "antd": "^6.3.3",
