@@ -1,5 +1,6 @@
 {
   "name": "etl-proto",
+  "homepage": "https://simakovpa.github.io/measures",
   "private": true,
   "version": "0.0.0",
   "type": "module",
