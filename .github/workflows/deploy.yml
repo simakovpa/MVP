@@ -9,6 +9,10 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,19 +23,19 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20  # ✅ Критично для Vite 8
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci  # ✅ требует package-lock.json
 
       - name: Build
-        run: npm run build  # ← критично!
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist  # ← деплоим dist, а не src!
+          path: ./dist  # ✅ деплоим собранный dist, а не исходники
 
   deploy:
     needs: build
