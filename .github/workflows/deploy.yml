@@ -1,20 +1,23 @@
+# .github/workflows/deploy.yml
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # ← позволяет запустить деплой вручную
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ← убирает предупреждение, безопасно
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20  # ← важно: 20 или 22 для нового Vite
+          node-version: 20  # ← важно: это для сборки вашего проекта (Vite 8)
           cache: 'npm'
 
       - name: Install dependencies
