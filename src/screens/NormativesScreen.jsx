@@ -686,11 +686,6 @@ export default function NormativesScreen({
             </div>
           )
         },
-        {
-          key:"etl",
-          label:<span>ЭТЛ <SafetyCertificateOutlined/></span>,
-          children:<TabETL labs={labs} setLabs={setLabs} api={api}/>
-        },
       ]}/>
     </div>
   );
