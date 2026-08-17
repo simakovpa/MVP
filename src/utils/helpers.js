@@ -38,9 +38,9 @@ export function getEffectiveStatus(row) {
 }
 
 export function countBadRows(prot) {
-  const rows = prot.mode === "tm_list"
-    ? (prot.tm_groups || []).flatMap(g => g.rows)
-    : (prot.rows || []);
+  const rows = prot.mode === "tm_list"    ? (prot.tm_groups   || []).flatMap(g => g.rows)
+             : prot.mode === "equip_list" ? (prot.equip_groups|| []).flatMap(g => g.rows)
+             : (prot.rows || []);
   return rows.filter(r => {
     const s = getEffectiveStatus(r);
     return s.color === "error" || s.color === "warning";
@@ -72,4 +72,33 @@ export function hasExpiredInstruments(prot, instruments) {
     const ins = instruments.find(x => x.id === id);
     return ins && calStatus(ins) === "expired";
   });
+}
+
+// ─── Актуальность переопределения (истечение срока) ───────────────────────────
+// Переопределение может быть постоянным (expires_at === null) или иметь срок
+// действия. Просроченное переопределение автоматически перестаёт участвовать
+// в цепочке приоритетов подбора норматива — без ручного отключения записи.
+export function isOverrideActive(ov) {
+  if (!ov.active) return false;
+  if (ov.expires_at) return new Date(ov.expires_at) >= new Date();
+  return true;
+}
+
+// ─── Цепочка приоритетов норматива ────────────────────────────────────────────
+// Единая точка логики подбора норматива — используется и в wizard создания
+// протокола (CreateProtocol), и при генерации/довводе строк в карточке
+// протокола (ProtocolCard), чтобы не дублировать логику в двух местах.
+export function findNorm(paramId, equipObj, normRanges, passportNorms, overrides, EQUIP_TYPES, NOMENCLATURES) {
+  if (!equipObj) return { zones:[], source:"" };
+  const ov_tmcz = overrides.find(o=>isOverrideActive(o)&&o.bind_type==="tmcz"&&o.bind_id===equipObj.id&&o.param_id===paramId);
+  if (ov_tmcz) return { zones:ov_tmcz.zones, source:`Переопределение · ТМЦ ${equipObj.name}` };
+  const ov_nm = overrides.find(o=>isOverrideActive(o)&&o.bind_type==="nomenclature"&&o.bind_id===equipObj.nm_id&&o.param_id===paramId);
+  if (ov_nm) { const nm=NOMENCLATURES.find(x=>x.id===equipObj.nm_id); return { zones:ov_nm.zones, source:`Переопределение · ${nm?.name}` }; }
+  const ov_type = overrides.find(o=>isOverrideActive(o)&&o.bind_type==="equipment_type"&&o.bind_id===equipObj.type_id&&o.param_id===paramId);
+  if (ov_type) { const t=EQUIP_TYPES.find(x=>x.id===equipObj.type_id); return { zones:ov_type.zones, source:`Переопределение · Тип ТМЦ: ${t?.name}` }; }
+  const pn = passportNorms.find(x=>x.param_id===paramId&&x.nomenclature_ids.includes(equipObj.nm_id));
+  if (pn) { const nm=NOMENCLATURES.find(x=>x.id===equipObj.nm_id); return { zones:pn.zones, source:`Паспортный норматив · ${nm?.name}` }; }
+  const nr = normRanges.find(x=>x.param_id===paramId&&x.type_id===equipObj.type_id);
+  if (nr) { const t=EQUIP_TYPES.find(x=>x.id===equipObj.type_id); return { zones:nr.zones, source:`Норм. диапазон · ${t?.name}` }; }
+  return { zones:[], source:"" };
 }

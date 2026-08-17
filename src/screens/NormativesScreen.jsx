@@ -2,12 +2,13 @@ import { useState } from "react";
 import {
   Tabs, Table, Button, Space, Tag, Tooltip, Modal, Form, Input, Select,
   Typography, Switch, notification, Row, Col, Radio, Popconfirm,
-  Checkbox, Badge, Alert, Divider
+  Checkbox, Badge, Alert, Divider, DatePicker
 } from "antd";
 import {
   PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined,
   WarningOutlined, ControlOutlined, SafetyCertificateOutlined
 } from "@ant-design/icons";
+import dayjs from "dayjs";
 import { EQUIP_TYPES, NOMENCLATURES, LABS } from "../data/mockData";
 import { uid } from "../utils/helpers";
 import { ZoneEditor, CalTag } from "../components/shared";
@@ -402,7 +403,7 @@ export default function NormativesScreen({
   const [editPn, setEditPn] = useState(null);
   const [pnForm, setPnForm] = useState({ param_id:"", source:"", nomenclature_ids:[], zones:[] });
   const [editOv, setEditOv] = useState(null);
-  const [ovForm, setOvForm] = useState({ bind_type:"nomenclature", bind_id:"", param_id:"", action_type:"permanent", reason:"", zones:[] });
+  const [ovForm, setOvForm] = useState({ bind_type:"nomenclature", bind_id:"", param_id:"", expires_at:null, reason:"", zones:[] });
 
   const newNoms = nomenclatures.filter(n => !n.accepted);
 
@@ -447,16 +448,10 @@ export default function NormativesScreen({
                   { title:"Параметр", dataIndex:"param_id", key:"p", render:v=>{ const pr=params.find(x=>x.id===v); return pr?`${pr.name} (${pr.unit})`:"—"; }},
                   { title:"Источник НТД", dataIndex:"source", key:"s", render:v=><Text type="secondary" style={{ fontSize:11 }}>{v}</Text> },
                   { title:"Зоны", key:"z", render:(_,r)=>r.zones.map(z=><Tag key={z.id} color={z.color} style={{ fontSize:10,marginBottom:2 }}>{z.label}</Tag>) },
-                  { title:"", key:"act", width:72, render:(_,r)=>(
-                    <Space size={0}>
-                      <Button size="small" type="text" icon={<EditOutlined/>}
-                        onClick={() => { setEditNr(r.id); setNrForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
-                      <Popconfirm title="Удалить диапазон?" okText="Удалить" okButtonProps={{ danger:true }} cancelText="Отмена"
-                        onConfirm={() => { setNormRanges(prev=>prev.filter(x=>x.id!==r.id)); api.success({ message:"Удалено", duration:2 }); }}>
-                        <Button size="small" type="text" icon={<DeleteOutlined style={{ color:"#ff4d4f" }}/>}/>
-                      </Popconfirm>
-                    </Space>
-                  )},
+                  { title:"", key:"act", width:60, render:(_,r)=>
+                    <Button size="small" type="text" icon={<EditOutlined/>}
+                      onClick={() => { setEditNr(r.id); setNrForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
+                  },
                 ]}
               />
               <Modal open={!!editNr} title={editNr==="new"?"Новый нормативный диапазон":"Редактировать диапазон"} width={900}
@@ -474,7 +469,7 @@ export default function NormativesScreen({
                       placeholder="Выберите параметр измерения"/>
                   </Form.Item>
                   <Row gutter={12}>
-                    <Col span={8}>
+                    <Col span={12}>
                       <Form.Item label="Тип ТМЦ *">
                         <Select value={nrForm.type_id} onChange={v=>setNrForm(f=>({...f,type_id:v}))}>
                           {EQUIP_TYPES.map(t=><Option key={t.id} value={t.id}>{t.name}</Option>)}
@@ -518,16 +513,10 @@ export default function NormativesScreen({
                     return <Tag key={id} color="geekblue" style={{ fontSize:11,marginBottom:2 }}>{nm?.name}</Tag>;
                   })},
                   { title:"Зоны", key:"z", render:(_,r)=>r.zones.map(z=><Tag key={z.id} color={z.color} style={{ fontSize:10,marginBottom:2 }}>{z.label}</Tag>) },
-                  { title:"", key:"act", width:72, render:(_,r)=>(
-                    <Space size={0}>
-                      <Button size="small" type="text" icon={<EditOutlined/>}
-                        onClick={() => { setEditPn(r.id); setPnForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
-                      <Popconfirm title="Удалить норматив?" okText="Удалить" okButtonProps={{ danger:true }} cancelText="Отмена"
-                        onConfirm={() => { setPassportNorms(prev=>prev.filter(x=>x.id!==r.id)); api.success({ message:"Удалено", duration:2 }); }}>
-                        <Button size="small" type="text" icon={<DeleteOutlined style={{ color:"#ff4d4f" }}/>}/>
-                      </Popconfirm>
-                    </Space>
-                  )},
+                  { title:"", key:"act", width:60, render:(_,r)=>
+                    <Button size="small" type="text" icon={<EditOutlined/>}
+                      onClick={() => { setEditPn(r.id); setPnForm({...r,zones:r.zones.map(z=>({...z}))}); }}/>
+                  },
                 ]}
               />
               <Modal open={!!editPn} title={editPn==="new"?"Новый паспортный норматив":"Редактировать"} width={760}
@@ -606,7 +595,7 @@ export default function NormativesScreen({
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
                 <Text type="secondary" style={{ fontSize:12 }}>Ручные изменения нормативов с обоснованием</Text>
                 <Button size="small" type="primary" icon={<PlusOutlined/>}
-                  onClick={() => { setEditOv("new"); setOvForm({ bind_type:"nomenclature", bind_id:"", param_id:"", action_type:"permanent", reason:"", zones:[] }); }}>
+                  onClick={() => { setEditOv("new"); setOvForm({ bind_type:"nomenclature", bind_id:"", param_id:"", expires_at:null, reason:"", zones:[] }); }}>
                   Создать
                 </Button>
               </div>
@@ -614,8 +603,11 @@ export default function NormativesScreen({
                 columns={[
                   { title:"Привязка", key:"b", render:(_,r)=><Text style={{ fontSize:12 }}>{bindLabel(r)}</Text> },
                   { title:"Параметр", dataIndex:"param_id", key:"p", render:v=>{ const pr=params.find(x=>x.id===v); return pr?`${pr.name} (${pr.unit})`:"—"; }},
-                  { title:"Тип", dataIndex:"action_type", key:"at", render:v=>
-                    <Tag color={v==="permanent"?"volcano":"gold"}>{v==="permanent"?"Постоянное":"Разовое"}</Tag> },
+                  { title:"Истекает", dataIndex:"expires_at", key:"exp", width:120, render:v=>{
+                    if (!v) return <Tag color="volcano">Постоянно</Tag>;
+                    const expired = new Date(v) < new Date();
+                    return <Tag color={expired?"default":"gold"}>{v}{expired?" (истекло)":""}</Tag>;
+                  }},
                   { title:"Зоны", key:"z", render:(_,r)=>r.zones.map(z=><Tag key={z.id} color={z.color} style={{ fontSize:10,marginBottom:2 }}>{z.label}</Tag>) },
                   { title:"Обоснование", dataIndex:"reason", key:"r", render:v=>
                     <Tooltip title={v}><Text style={{ fontSize:11 }}>{v.length>40?v.slice(0,40)+"…":v}</Text></Tooltip> },
@@ -668,11 +660,16 @@ export default function NormativesScreen({
                       </Form.Item>
                     </Col>
                   </Row>
-                  <Form.Item label="Тип действия *">
-                    <Radio.Group value={ovForm.action_type} onChange={e=>setOvForm(f=>({...f,action_type:e.target.value}))}>
-                      <Radio value="permanent">Постоянное</Radio>
-                      <Radio value="one_time">Разовое (для одного протокола)</Radio>
-                    </Radio.Group>
+                  <Form.Item label="Действительно до"
+                    extra="Оставьте пустым для постоянного переопределения. После указанной даты переопределение автоматически перестаёт действовать и выходит из цепочки приоритетов.">
+                    <DatePicker
+                      value={ovForm.expires_at ? dayjs(ovForm.expires_at) : null}
+                      onChange={(d)=>setOvForm(f=>({...f, expires_at: d ? d.format("YYYY-MM-DD") : null}))}
+                      format="DD.MM.YYYY"
+                      placeholder="Бессрочно (постоянное переопределение)"
+                      style={{ width:"100%" }}
+                      allowClear
+                    />
                   </Form.Item>
                   <Form.Item label="Обоснование *">
                     <Input.TextArea rows={2} value={ovForm.reason} onChange={e=>setOvForm(f=>({...f,reason:e.target.value}))}

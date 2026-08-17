@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  ConfigProvider, Layout, Menu, Badge, Typography, Modal
+  ConfigProvider, Layout, Menu, Badge, Typography
 } from "antd";
 import {
   FileProtectOutlined, PlusOutlined, ControlOutlined,
-  ThunderboltOutlined, SafetyCertificateOutlined, HistoryOutlined,
-  SettingOutlined, LogoutOutlined, UserOutlined
+  ThunderboltOutlined, SafetyCertificateOutlined
 } from "@ant-design/icons";
 import {
   INIT_PROTOCOLS, INIT_NORM_RANGES, INIT_PASSPORT_NORMS,
@@ -17,34 +16,32 @@ import ProtocolCard    from "./screens/ProtocolCard";
 import CreateProtocol  from "./screens/CreateProtocol";
 import NormativesScreen, { LabsScreen } from "./screens/NormativesScreen";
 import InstrumentsScreen from "./screens/InstrumentsScreen";
-import HistoryScreen from "./screens/HistoryScreen";
 
-const { Sider, Content, Header } = Layout;
+const { Sider, Content } = Layout;
 const { Text } = Typography;
 
 // ─── Тема ─────────────────────────────────────────────────────────────────────
 const theme = {
   token: {
-    colorPrimary: "#1677ff", colorBgContainer: "#ffffff",
+    colorPrimary: "#1a5fa8", colorBgContainer: "#ffffff",
     colorBgLayout: "#f0f2f5", borderRadius: 6,
     fontFamily: "'IBM Plex Sans','Segoe UI',sans-serif",
     fontSize: 13, colorTextBase: "#1a1a2e",
   },
   components: {
-    Table: { headerBg:"#fafafa", borderColor:"#f0f0f0", rowHoverBg:"#f5f5f5" },
-    Menu: { itemBg:"#ffffff", itemColor:"rgba(0,0,0,0.88)", itemHoverBg:"#f5f5f5",
-             itemSelectedBg:"#e6f4ff", itemSelectedColor:"#1677ff", darkItemBg:"#ffffff", darkItemColor:"rgba(0,0,0,0.88)" },
-    Layout: { headerBg:"#ffffff", siderBg:"#ffffff", bodyBg:"#f0f2f5", headerHeight:56 },
+    Table: { headerBg:"#f0f4f8", borderColor:"#dde3ec", rowHoverBg:"#f5f8ff" },
+    Menu:  { itemBg:"#0f2744", itemColor:"#a8bdd4", itemHoverBg:"#1a3a5c",
+             itemSelectedBg:"#1a5fa8", itemSelectedColor:"#ffffff", subMenuItemBg:"#0a1e35" },
   }
 };
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [protocols,     setProtocols]     = useState(() => { const s = localStorage.getItem('protocols'); return s ? JSON.parse(s) : INIT_PROTOCOLS; });
-  const [normRanges,    setNormRanges]    = useState(() => { const s = localStorage.getItem('normRanges'); return s ? JSON.parse(s) : INIT_NORM_RANGES; });
-  const [passportNorms, setPassportNorms] = useState(() => { const s = localStorage.getItem('passportNorms'); return s ? JSON.parse(s) : INIT_PASSPORT_NORMS; });
-  const [overrides,     setOverrides]     = useState(() => { const s = localStorage.getItem('overrides'); return s ? JSON.parse(s) : INIT_OVERRIDES; });
-  const [instruments,   setInstruments]   = useState(() => { const s = localStorage.getItem('instruments'); return s ? JSON.parse(s) : INIT_INSTRUMENTS; });
+  const [protocols,     setProtocols]     = useState(INIT_PROTOCOLS);
+  const [normRanges,    setNormRanges]    = useState(INIT_NORM_RANGES);
+  const [passportNorms, setPassportNorms] = useState(INIT_PASSPORT_NORMS);
+  const [overrides,     setOverrides]     = useState(INIT_OVERRIDES);
+  const [instruments,   setInstruments]   = useState(INIT_INSTRUMENTS);
   const [nomenclatures, setNomenclatures] = useState(NOMENCLATURES);
   const [workTypes,     setWorkTypes]     = useState(WORK_TYPES);
   const [params,        setParams]        = useState(PARAMS);
@@ -53,13 +50,6 @@ export default function App() {
   const [screen,      setScreen]      = useState("list");
   const [activeProtId, setActiveProtId] = useState(null);
   const [menuKey,     setMenuKey]     = useState("protocols");
-
-  // Синхронизация справочников с localStorage
-  useEffect(() => { localStorage.setItem('protocols', JSON.stringify(protocols)); }, [protocols]);
-  useEffect(() => { localStorage.setItem('normRanges', JSON.stringify(normRanges)); }, [normRanges]);
-  useEffect(() => { localStorage.setItem('passportNorms', JSON.stringify(passportNorms)); }, [passportNorms]);
-  useEffect(() => { localStorage.setItem('overrides', JSON.stringify(overrides)); }, [overrides]);
-  useEffect(() => { localStorage.setItem('instruments', JSON.stringify(instruments)); }, [instruments]);
 
   const activeProt   = protocols.find(p => p.id === activeProtId);
   const newNomCount  = nomenclatures.filter(n => !n.accepted).length;
@@ -73,23 +63,8 @@ export default function App() {
     return new Date(i.date_next_cal) <= new Date();
   }).length;
 
-  function openProt(p)  {
-    if (p.status === "Черновик") {
-      setActiveProtId(p.id); setScreen("create"); setMenuKey("protocols");
-    } else {
-      setActiveProtId(p.id); setScreen("card"); setMenuKey("protocols");
-    }
-  }
-  function editProt(id)  { setActiveProtId(id); setScreen("create"); setMenuKey("protocols"); }
-  function saveProt(p)   {
-    const exists = protocols.find(x => x.id === p.id);
-    if (exists) {
-      setProtocols(prev => prev.map(x => x.id === p.id ? p : x));
-    } else {
-      setProtocols(prev => [p, ...prev]);
-    }
-    setActiveProtId(p.id); setScreen("card");
-  }
+  function openProt(id)  { setActiveProtId(id); setScreen("card"); setMenuKey("protocols"); }
+  function saveProt(p)   { setProtocols(prev => [p,...prev]); setActiveProtId(p.id); setScreen("card"); }
   function updateProt(p) { setProtocols(prev => prev.map(x => x.id===p.id ? p : x)); }
 
   const nav = (s, k) => { setScreen(s); setMenuKey(k || s); };
@@ -97,7 +72,6 @@ export default function App() {
   const menuItems = [
     { key:"protocols",   icon:<FileProtectOutlined/>, label:"Протоколы" },
     { key:"create",      icon:<PlusOutlined/>,        label:"Создать протокол" },
-    { key:"history",     icon:<HistoryOutlined/>,     label:"История измерений" },
     { type:"divider" },
     { key:"instruments", icon:<ThunderboltOutlined/>,
       label:<span>Приборы {expiredCount>0 && <Badge count={expiredCount} size="small" style={{ marginLeft:4 }}/>}</span> },
@@ -113,7 +87,6 @@ export default function App() {
     else if (key==="normatives")  nav("normatives","normatives");
     else if (key==="instruments") nav("instruments","instruments");
     else if (key==="labs")        nav("labs","labs");
-    else if (key==="history")     nav("history","history");
   }
 
   return (
@@ -127,141 +100,57 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background:#c1ccd9; border-radius:3px; }
       `}</style>
       <Layout style={{ minHeight:"100vh", width:"100%", display:"flex" }}>
-        
-        {/* Header - как в ОРЭО */}
-        <Header style={{ 
-          background: '#fff', 
-          padding: '0 24px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          borderBottom: '1px solid #f0f0f0',
-          height: 56,
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
-        }}>
+        <Sider width={220} collapsible={false} style={{ position:"sticky", top:0, height:"100vh", overflow:"auto", flexShrink:0 }}>
           {/* Логотип */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <a href="/" style={{ display: 'inline-block', lineHeight: 0 }}>
-              <div style={{ 
-                width: 34, 
-                height: 34, 
-                background: 'linear-gradient(135deg, #1677ff, #4096ff)',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 16
-              }}>
-                Э
-              </div>
-            </a>
-            {/* Название приложения */}
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
-              ЭТЛ Модуль
-            </span>
-          </div>
-          
-          {/* Правая часть header - настройки и профиль */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <a href="/admin" style={{ color: 'rgba(0,0,0,0.88)', lineHeight: 0 }}>
-              <SettingOutlined style={{ fontSize: 18 }} />
-            </a>
-            <a href="/profile" style={{ width: 24, height: 24, lineHeight: 0 }}>
-              <div style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: '#e6f4ff',
-                color: '#1677ff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 12
-              }}>
-                <UserOutlined />
-              </div>
-            </a>
-            <span style={{ cursor: 'pointer', color: 'rgba(0,0,0,0.88)' }}>
-              <LogoutOutlined style={{ fontSize: 18 }} />
-            </span>
-          </div>
-        </Header>
-        
-        <Layout style={{ flex: 1, marginTop: 0 }}>
-          <Sider width={260} collapsible={false} 
-            style={{ 
-              position: 'sticky', 
-              top: 56, 
-              height: 'calc(100vh - 56px)', 
-              overflow: 'auto', 
-              flexShrink: 0,
-              background: '#ffffff',
-              borderRight: '1px solid #f0f0f0'
-            }}>
-            {/* Меню в сайдбаре */}
-            <Menu mode="inline" selectedKeys={[menuKey]} items={menuItems}
-              onClick={onMenu} 
-              style={{ 
-                borderRight: 'none', 
-                paddingTop: 8,
-                background: '#ffffff',
-                color: 'rgba(0,0,0,0.88)'
-              }}/>
-
-            {/* Статистика в сайдбаре */}
-            <div style={{ padding:"14px 12px", borderTop:"1px solid #f0f0f0", marginTop:8 }}>
-              {[
-                { l:"Черновики",       v:protocols.filter(p=>p.status==="Черновик").length,     c:"#8c8c8c" },
-                { l:"На проверке",     v:protocols.filter(p=>p.status==="На проверке").length,   c:"#1890ff" },
-                { l:"Ожидают ЭТЛ",    v:newNomCount,                                            c:"#eb2f96" },
-                { l:"Просрочено приборов", v:expiredCount,                                       c:"#ff4d4f" },
-              ].map(x=>(
-                <div key={x.l} style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
-                  <span style={{ color:"#8c8c8c",fontSize:11 }}>{x.l}</span>
-                  <span style={{ color:x.c,fontWeight:700,fontSize:12 }}>{x.v}</span>
-                </div>
-              ))}
+          <div style={{ padding:"16px 14px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)",
+            display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:30,height:30,borderRadius:8,
+              background:"linear-gradient(135deg,#1a5fa8,#4d9de0)",
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0 }}>⚡</div>
+            <div>
+              <div style={{ color:"#fff",fontWeight:700,fontSize:12,lineHeight:1.2 }}>ЭТЛ Модуль</div>
+              <div style={{ color:"#6b8fa8",fontSize:10 }}>Испытания и измерения</div>
             </div>
-          </Sider>
+          </div>
 
-          <Layout style={{ flex:1, minWidth:0, overflow:"hidden" }}>
-            <Content style={{ background:"#f0f2f5", minHeight:"calc(100vh - 56px)", overflow:"auto" }}>
+          <Menu mode="inline" selectedKeys={[menuKey]} items={menuItems}
+            onClick={onMenu} style={{ borderRight:"none",paddingTop:8 }}/>
+
+          {/* Статистика в сайдбаре */}
+          <div style={{ padding:"14px 12px", borderTop:"1px solid rgba(255,255,255,0.06)", marginTop:8 }}>
+            {[
+              { l:"Черновики",       v:protocols.filter(p=>p.status==="Черновик").length,     c:"#6b8fa8" },
+              { l:"На проверке",     v:protocols.filter(p=>p.status==="На проверке").length,   c:"#4d9de0" },
+              { l:"Ожидают ЭТЛ",    v:newNomCount,                                            c:"#eb2f96" },
+              { l:"Просрочено приборов", v:expiredCount,                                       c:"#ff4d4f" },
+            ].map(x=>(
+              <div key={x.l} style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
+                <span style={{ color:"#6b8fa8",fontSize:11 }}>{x.l}</span>
+                <span style={{ color:x.c,fontWeight:700,fontSize:12 }}>{x.v}</span>
+              </div>
+            ))}
+          </div>
+        </Sider>
+
+        <Layout style={{ flex:1, minWidth:0, overflow:"hidden" }}>
+          <Content style={{ background:"#f0f2f5", minHeight:"100vh", overflow:"auto" }}>
             {screen==="list" && (
               <ProtocolList
                 protocols={protocols} workTypes={workTypes} params={params} instruments={instruments}
-                onOpen={openProt} onEdit={editProt} onCreate={() => { setActiveProtId(null); nav("create","create"); }}/>
+                onOpen={openProt} onCreate={() => nav("create","create")}/>
             )}
             {screen==="card" && activeProt && (
               <ProtocolCard
                 prot={activeProt} workTypes={workTypes} params={params} instruments={instruments}
+                normRanges={normRanges} passportNorms={passportNorms} overrides={overrides}
                 onBack={() => nav("list","protocols")} onUpdate={updateProt}/>
             )}
-            {screen==="create" && (() => {
-              const editProt = activeProtId ? protocols.find(p => p.id === activeProtId) : null;
-              if (editProt) {
-                return (
-                  <Modal open={true} title={`Редактирование черновика ${editProt.number}`} width={900} footer={null}
-                    onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}>
-                    <CreateProtocol
-                      editProtocol={editProt}
-                      protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
-                      overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
-                      onSave={saveProt} onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}/>
-                  </Modal>
-                );
-              }
-              return (
-                <CreateProtocol
-                  editProtocol={null}
-                  protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
-                  overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
-                  onSave={saveProt} onCancel={() => { setActiveProtId(null); nav("list","protocols"); }}/>
-              );
-            })()}
+            {screen==="create" && (
+              <CreateProtocol
+                protocols={protocols} normRanges={normRanges} passportNorms={passportNorms}
+                overrides={overrides} workTypes={workTypes} params={params} instruments={instruments}
+                onSave={saveProt} onCancel={() => nav("list","protocols")}/>
+            )}
             {screen==="normatives" && (
               <NormativesScreen
                 normRanges={normRanges}    setNormRanges={setNormRanges}
@@ -278,17 +167,7 @@ export default function App() {
             {screen==="labs" && (
               <LabsScreen labs={labs} setLabs={setLabs}/>
             )}
-            {screen==="history" && (
-              <HistoryScreen
-                protocols={protocols}
-                workTypes={workTypes}
-                params={params}
-                instruments={instruments}
-                onOpenProtocol={openProt}
-              />
-            )}
           </Content>
-          </Layout>
         </Layout>
       </Layout>
     </ConfigProvider>

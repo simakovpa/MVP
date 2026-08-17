@@ -270,6 +270,10 @@ export default function ProtocolPreview({ prot, workTypes, instruments, open, on
                 <td style={s.td}>Атмосферное давление, мм рт. ст.</td>
                 <td style={{ ...s.tdCenter, fontWeight: "bold" }}>{env.pressure ?? "—"}</td>
               </>}
+              {prot.voltage_test && <>
+                <td style={s.td}>Испытательное напряжение, кВ</td>
+                <td style={{ ...s.tdCenter, fontWeight: "bold" }}>{prot.voltage_test}</td>
+              </>}
             </tr>
           </tbody>
         </table>

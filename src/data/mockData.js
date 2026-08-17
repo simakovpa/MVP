@@ -194,13 +194,22 @@ export const INIT_PASSPORT_NORMS = [
 // ─── Переопределения (вкладка 4) ──────────────────────────────────────────────
 export const INIT_OVERRIDES = [
   { id: "ov1", bind_type: "nomenclature", bind_id: "nm2", param_id: "pr1",
-    action_type: "permanent", active: true,
+    expires_at: null, active: true,
     reason: "Партия ТФЗМ-35 кВ 2015 г.в. — пониженное качество изоляции. Норма ужесточена. Распоряжение ГИ №47 от 12.01.2026.",
     author: "em1", created: "2026-01-15",
     zones: [
       { id: "oz1", label: "Норма",       min: 2000, min_inc: true,  max: null, max_inc: false, color: "success" },
       { id: "oz2", label: "Риск",        min: 1000, min_inc: true,  max: 2000, max_inc: false, color: "warning" },
       { id: "oz3", label: "Недопустимо", min: null, min_inc: false, max: 1000, max_inc: false, color: "error"   },
+    ]},
+  { id: "ov2", bind_type: "tmcz", bind_id: "eq1", param_id: "pr1",
+    expires_at: "2026-04-01", active: true,
+    reason: "Зимнее понижение изоляции при отрицательных температурах — временное смягчение нормы. Распоряжение ГИ №52 от 20.02.2026.",
+    author: "em1", created: "2026-02-20",
+    zones: [
+      { id: "oz4", label: "Норма",                min: 1500, min_inc: true,  max: null, max_inc: false, color: "success" },
+      { id: "oz5", label: "Область риска",        min: 500,  min_inc: true,  max: 1500, max_inc: false, color: "warning" },
+      { id: "oz6", label: "Предельное состояние", min: null, min_inc: false, max: 500,  max_inc: false, color: "error"   },
     ]},
 ];
 
@@ -303,7 +312,25 @@ export const INIT_PROTOCOLS = [
         rows:[{ ...mkRow("r5","pr3",[{id:"z7",label:"Норма",min:null,min_inc:false,max:4.0,max_inc:true,color:"success"},{id:"z8",label:"Отклонение",min:4.0,min_inc:false,max:null,max_inc:false,color:"error"}],3.2,""),
           norm_source:"Норм. диапазон · Опора ВЛ (деревянная)"}]},
       { tm_id:"tm2", tm_name:"Опора №2",
-        rows:[{ ...mkRow("r6","pr3",[{id:"z7",label:"Норма",min:null,min_inc:false,max:4.0,max_inc:true,color:"success"},{id:"z8",label:"Отклонение",min:4.0,min_inc:false,max:null,max_inc:false,color:"error"}],null,""), norm_source:"Норм. диапазон · Опора ВЛ (деревянная)" }]},
+        rows:[{ ...mkRow("r6","pr3",[],null,""), norm_source:"" }]},
     ],
-    history:[{ date:"2026-03-18 11:00", user:"em4", action:"Создан (Черновик)" }]},
+    history:[
+      { date:"2026-03-18 11:00", user:"em4", action:"Создан (Черновик)" },
+      { date:"2026-03-18 11:15", user:"em4", action:"Сформированы строки измерений. Статус: В работе" },
+    ]},
+  { id: "p4", number: "ПИМ-2026-00004", date_created: "2026-03-20", date_measured: "2026-03-20",
+    object_id: "o2", work_type_id: "wt3", test_type: "Эксплуатационные",
+    lab_id: "lab1", dept_id: "f1d2",
+    executor_ids: ["em4"], reviewer_id: null, instrument_ids: [],
+    mode: "tm_list", equip_id: null,
+    env: {}, voltage_test: null,
+    status: "Черновик", date_signed: null, signed_by: null,
+    conclusion_type: null, conclusion_text: "", cancel_reason: null, defects: [],
+    // Скелет: ТМ уже выбраны на шаге wizard, но строки ещё не сформированы —
+    // это произойдёт при нажатии «Создать протокол» (переход в «В работе»).
+    tm_groups: [
+      { tm_id:"tm3", tm_name:"Опора №3", rows: [] },
+      { tm_id:"tm4", tm_name:"Пролёт №1-2", rows: [] },
+    ],
+    history:[{ date:"2026-03-20 09:40", user:"em4", action:"Создан (Черновик). Строки измерений будут сформированы при переходе в «В работе»." }]},
 ];

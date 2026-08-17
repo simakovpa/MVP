@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal, Row, Col, InputNumber,
+  Card, Tabs, Table, Tag, Button, Space, Input, Select, Steps, Modal,
   Alert, Breadcrumb, Descriptions, Collapse, Typography, Tooltip, Empty,
-  notification, Divider, Form, message, Radio
+  InputNumber, notification, Divider
 } from "antd";
 import {
   HomeOutlined, ArrowLeftOutlined, SendOutlined, EditOutlined, StopOutlined,
   BugOutlined, SafetyCertificateOutlined, ApartmentOutlined, ThunderboltOutlined,
-  ClockCircleOutlined, DeleteOutlined,
   WarningOutlined, SwapOutlined, QuestionCircleOutlined, CalendarOutlined,
-  TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined
+  TeamOutlined, ToolOutlined, EyeOutlined, PrinterOutlined,
+  PlusOutlined, DeleteOutlined
 } from "@ant-design/icons";
-import { OBJECTS, EMPLOYEES, LABS, empName, empNames, deptLabel, EQUIP_ON_OBJECTS, TM_ON_OBJECTS } from "../data/mockData";
 import {
-  getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus
+  OBJECTS, EMPLOYEES, LABS, TM_ON_OBJECTS, EQUIP_ON_OBJECTS, EQUIP_TYPES, NOMENCLATURES,
+  empName, empNames, deptLabel
+} from "../data/mockData";
+import {
+  getEffectiveStatus, countBadRows, calcZoneStatus, nowStr, hasExpiredInstruments, calStatus, uid, findNorm
 } from "../utils/helpers";
 import { StatusTag, RowStatusBadge, NormSourceBadge, CalTag } from "../components/shared";
 import ProtocolPreview from "./ProtocolPreview";
@@ -32,7 +35,7 @@ const conclusionCfg = {
 };
 
 const statusCfgStep = {
-  "Черновик":    0, "В работе": 1, "На проверке":2, "Подписан":3, "Аннулирован":3
+  "Черновик":0, "В работе":1, "На проверке":2, "Подписан":3, "Аннулирован":3
 };
 
 const ENV_LABELS = { temp:"Температура", humidity:"Влажность", pressure:"Давление" };
@@ -100,158 +103,101 @@ function EquipListTable({ prot, makeRowCols }) {
   );
 }
 
-export default function ProtocolCard({ prot, workTypes, params, instruments, onBack, onUpdate }) {
+export default function ProtocolCard({
+  prot, workTypes, params, instruments, normRanges, passportNorms, overrides,
+  onBack, onUpdate
+}) {
   const [api, ctx] = notification.useNotification();
-  const [env, setEnv] = useState(prot.env || {});
-
-  // Sync env from prot when prop changes
-  useEffect(() => {
-    setEnv(prot.env || {});
-  }, [prot.env]);
-
-  const handleEnvChange = (field, value) => {
-    const newEnv = { ...env, [field]: value };
-    setEnv(newEnv);
-    const updated = { ...prot, env: newEnv };
-    onUpdate(updated);
-  };
   const [conclusionModal, setConclusionModal] = useState(false);
   const [conclusionType,  setConclusionType]  = useState(null);
   const [conclusionText,  setConclusionText]  = useState("");
   const [cancelModal, setCancelModal]         = useState(false);
   const [cancelReason, setCancelReason]       = useState("");
   const [defectModal, setDefectModal]         = useState(false);
-  const [defectEntity, setDefectEntity]       = useState(null); // {type, id, name, severity} для модала дефекта
-  const [signConfirmModal, setSignConfirmModal] = useState(false); //nochange
   const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
-  const [manualSeverity, setManualSeverity]   = useState("normal"); // "normal" | "warning" | "critical"
   const [printModal, setPrintModal]           = useState(false);
   const [manualVal, setManualVal]             = useState("");
   const [manualReason, setManualReason]       = useState("");
+  const [addTmValue, setAddTmValue]           = useState(null);
 
-  const isEditable  = prot.status === "Черновик" || prot.status === "В работе";
-  const canOverride = prot.status === "На проверке";
+  const isDraft      = prot.status === "Черновик";
+  const isEditable   = prot.status === "В работе";
+  const canOverride  = prot.status === "На проверке";
+  const canEditTM    = isDraft || isEditable; // добавление/удаление ТМ доступно в обоих статусах
   const obj  = OBJECTS.find(o => o.id===prot.object_id);
   const wt   = workTypes.find(w => w.id===prot.work_type_id);
   const lab  = LABS.find(l => l.id===prot.lab_id);
+  const availableTMs = TM_ON_OBJECTS[prot.object_id] || [];
+  const usedTmIds = new Set((prot.tm_groups||[]).map(g=>g.tm_id));
+  const tmOptionsToAdd = availableTMs.filter(t => !usedTmIds.has(t.id));
+  const equipOnObject = EQUIP_ON_OBJECTS[prot.object_id] || [];
+
+  // Строит строки измерений по шаблону вида работы.
+  // equipObj (опционально) — конкретный экземпляр оборудования: если передан,
+  // норматив подбирается для НЕГО по полной цепочке приоритетов (findNorm).
+  // Для режима «Перечень ТМ» экземпляр оборудования не передаётся — привязки
+  // к конкретной единице там нет (см. ФТ-ТМ4, раздел 4.3 Architecture Decisions):
+  // норматив в этом режиме не вычисляется автоматически, строка остаётся
+  // «Не определено» до появления норматива по типу оборудования из вида работы
+  // либо до ручного статуса исполнителя.
+  function buildRowsFromTemplate(equipObj = null) {
+    if (!wt) return [];
+    return (wt.params||[]).map(pt => {
+      const pr = params.find(p => p.id===pt.param_id);
+      let zones = [], norm_source = "";
+      if (equipObj) {
+        const found = findNorm(pt.param_id, equipObj, normRanges, passportNorms, overrides, EQUIP_TYPES, NOMENCLATURES);
+        zones = found.zones; norm_source = found.source;
+      }
+      return { id:uid(), param_id:pt.param_id, param_name:pr?.name||"", unit:pr?.unit||"",
+        zones, norm_source, fact:null, note:"",
+        auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
+    });
+  }
+
+  function startWork() {
+    const rowsPayload = {};
+    if (prot.mode==="equipment") {
+      const eq = equipOnObject.find(e => e.id===prot.equip_id);
+      rowsPayload.rows = buildRowsFromTemplate(eq);
+    } else if (prot.mode==="tm_list") {
+      rowsPayload.tm_groups = (prot.tm_groups||[]).map(g =>
+        ({...g, rows: g.rows?.length ? g.rows : buildRowsFromTemplate()}));
+    } else if (prot.mode==="equip_list") {
+      rowsPayload.equip_groups = (prot.equip_groups||[]).map(g => {
+        if (g.rows?.length) return g;
+        const eq = equipOnObject.find(e => e.id===g.equip_id);
+        return {...g, rows: buildRowsFromTemplate(eq)};
+      });
+    }
+    onUpdate({...prot, status:"В работе", ...rowsPayload,
+      history:[...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?", action:"Сформированы строки измерений. Статус: В работе" }]});
+    api.success({ message:"Протокол переведён в статус «В работе»", duration:2 });
+  }
+
+  function addTM() {
+    if (!addTmValue) return;
+    const tm = availableTMs.find(t => t.id===addTmValue);
+    if (!tm) return;
+    // Строки создаются только если протокол уже в «В работе» — в «Черновике»
+    // групповая структура сохраняется «скелетом» (rows:[]) до общего перехода.
+    const newGroup = { tm_id: tm.id, tm_name: tm.name, rows: isEditable ? buildRowsFromTemplate() : [] };
+    onUpdate({...prot, tm_groups:[...(prot.tm_groups||[]), newGroup],
+      history:[...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?", action:`Добавлено ТМ «${tm.name}»` }]});
+    setAddTmValue(null);
+    api.success({ message:`ТМ «${tm.name}» добавлено`, duration:2 });
+  }
+
+  function removeTM(tmId, tmName) {
+    onUpdate({...prot, tm_groups:(prot.tm_groups||[]).filter(g=>g.tm_id!==tmId),
+      history:[...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?", action:`Удалено ТМ «${tmName}»` }]});
+    api.success({ message:`ТМ «${tmName}» удалено`, duration:2 });
+  }
   const selectedInstruments = (prot.instrument_ids||[])
     .map(id => instruments.find(x=>x.id===id))
     .filter(Boolean);
   const hasExpired = hasExpiredInstruments(prot, instruments);
-
-  // Получить все строки с отклонениями (warning или error)
-  function getEntitiesWithDeviations() {
-    const entities = [];
-    const existingDefectEntityIds = (prot.defects || []).map(d => d.entity_id);
-    
-    if (prot.mode === "equipment") {
-      // Режим единичного оборудования - отклонения относятся к этому оборудованию
-      const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === prot.equip_id);
-      const badRows = (prot.rows || []).filter(r => {
-        const s = getEffectiveStatus(r);
-        return s.color === "error" || s.color === "warning";
-      }).map(r => {
-        const s = getEffectiveStatus(r);
-        return {
-          param_name: r.param_name,
-          unit: r.unit,
-          fact: r.fact,
-          zone_label: s.label,
-          zone_color: s.color
-        };
-      });
-      if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
-        // Критичность дефекта - максимальная из отклонений
-        const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
-        entities.push({
-          type: "equipment",
-          id: equip.id,
-          name: equip.name,
-          severity: maxSeverity,
-          deviationCount: badRows.length,
-          badRows: badRows
-        });
-      }
-    } else if (prot.mode === "tm_list") {
-      // Режим списка технических мест
-      (prot.tm_groups || []).forEach(g => {
-        const badRows = (g.rows || []).filter(r => {
-          const s = getEffectiveStatus(r);
-          return s.color === "error" || s.color === "warning";
-        }).map(r => {
-          const s = getEffectiveStatus(r);
-          return {
-            param_name: r.param_name,
-            unit: r.unit,
-            fact: r.fact,
-            zone_label: s.label,
-            zone_color: s.color
-          };
-        });
-        if (badRows.length > 0 && !existingDefectEntityIds.includes(g.tm_id)) {
-          const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
-          entities.push({
-            type: "tm",
-            id: g.tm_id,
-            name: g.tm_name,
-            severity: maxSeverity,
-            deviationCount: badRows.length,
-            badRows: badRows
-          });
-        }
-      });
-    } else if (prot.mode === "equip_list") {
-      // Режим списка оборудования
-      (prot.equip_groups || []).forEach(g => {
-        const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === g.equip_id);
-        const badRows = (g.rows || []).filter(r => {
-          const s = getEffectiveStatus(r);
-          return s.color === "error" || s.color === "warning";
-        }).map(r => {
-          const s = getEffectiveStatus(r);
-          return {
-            param_name: r.param_name,
-            unit: r.unit,
-            fact: r.fact,
-            zone_label: s.label,
-            zone_color: s.color
-          };
-        });
-        if (badRows.length > 0 && equip && !existingDefectEntityIds.includes(equip.id)) {
-          const maxSeverity = badRows.some(r => r.zone_color === "error") ? "error" : "warning";
-          entities.push({
-            type: "equipment",
-            id: equip.id,
-            name: equip.name,
-            severity: maxSeverity,
-            deviationCount: badRows.length,
-            badRows: badRows
-          });
-        }
-      });
-    }
-    
-    return entities;
-  }
-
-  // Обработчик кнопки "Создать дефект"
-  function handleCreateDefect() {
-    const entitiesWithDeviations = getEntitiesWithDeviations();
-    
-    if (entitiesWithDeviations.length === 0) {
-      api.warning({ message: "Нет отклонений от норм в протоколе" });
-      return;
-    }
-    
-    // Если только одна сущность с отклонениями - предзаполняем
-    if (entitiesWithDeviations.length === 1) {
-      setDefectEntity(entitiesWithDeviations[0]);
-    } else {
-      setDefectEntity(null); // Сбрасываем для отображения списка выбора
-    }
-    setDefectModal(true);
-  }
 
   function getAllRows() {
     if (prot.mode==="tm_list") return (prot.tm_groups||[]).flatMap(g=>g.rows);
@@ -278,7 +224,7 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     if (!manualReason.trim()) { api.warning({ message:"Укажите обоснование" }); return; }
     const { rowId, tmIdx } = manualModal;
     const upd = row => row.id!==rowId ? row
-      : {...row, manual_status:manualVal, manual_reason:manualReason, is_overridden:true, severity:manualSeverity};
+      : {...row, manual_status:manualVal, manual_reason:manualReason, is_overridden:true};
     const updated = {...prot};
     if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
     else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
@@ -286,33 +232,13 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
     updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
       action:`Статус строки переопределён: «${manualVal}» — ${manualReason}` }];
     onUpdate(updated);
-    setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal");
+    setManualModal(null); setManualVal(""); setManualReason("");
     api.success({ message:"Статус строки обновлён", duration:2 });
-  }
-
-  function resetManual() {
-    const { rowId, tmIdx } = manualModal;
-    const oldRow = (prot.mode==="equipment" ? prot.rows : 
-      prot.mode==="equip_list" ? (prot.equip_groups||[])[tmIdx]?.rows : prot.tm_groups[tmIdx]?.rows
-    ).find(r=>r.id===rowId);
-    const oldStatus = oldRow?.manual_status || "";
-    const upd = row => row.id!==rowId ? row
-      : {...row, manual_status:undefined, manual_reason:undefined, is_overridden:false};
-    const updated = {...prot};
-    if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
-    else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
-    else updated.tm_groups = prot.tm_groups.map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
-    updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
-      action:`Сброшен переопределённый статус: «${oldStatus}» → расчётный` }];
-    onUpdate(updated);
-    setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal");
-    api.success({ message:"Ручной статус сброшен", duration:2 });
   }
 
   function transition(newStatus, extra={}) {
     const labels = {
-      "В работе":"Начат ввод измерений",
-      "На проверке":"Отправлен на проверку", "Черновик":"Возвращён в черновик",
+      "На проверке":"Отправлен на проверку", "В работе":"Возвращён в работу",
       "Подписан":"Подписан", "Аннулирован":`Аннулирован. Причина: ${extra.cancel_reason}`,
     };
     onUpdate({...prot, status:newStatus, ...extra,
@@ -342,35 +268,17 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
               onChange={v=>updateRowField(r.id,"fact",v,tmIdx)} placeholder="Введите"/>
           : <Text style={{ fontSize:13,fontWeight:600 }}>{r.fact??"-"}</Text>
       },
-      { title:"Статус", key:"status", width:220, render:(_,r) => {
+      { title:"Статус", key:"status", width:210, render:(_,r) => {
         const s = getEffectiveStatus(r);
         return (
           <Space direction="vertical" size={2}>
             <RowStatusBadge row={r}/>
-            {(isEditable||canOverride) && (s.undefined||canOverride||r.manual_status) && (
-              <>
-                <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto" }}
-                  icon={<EditOutlined/>}
-                  onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); setManualSeverity(r.severity||"normal"); }}>
-                  {s.undefined?"Указать статус":"Переопределить"}
-                </Button>
-                {r.manual_status && (
-                  <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto", color:"#ff4d4f" }}
-                    onClick={() => {
-                      const upd = row => row.id!==r.id ? row : {...row, manual_status:undefined, manual_reason:undefined, is_overridden:false};
-                      const updated = {...prot};
-                      if (prot.mode==="equipment") updated.rows = prot.rows.map(upd);
-                      else if (prot.mode==="equip_list") updated.equip_groups = (prot.equip_groups||[]).map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
-                      else updated.tm_groups = prot.tm_groups.map((g,gi)=>gi!==tmIdx?g:{...g,rows:g.rows.map(upd)});
-                      updated.history = [...prot.history, { date:nowStr(), user:prot.executor_ids?.[0]||"?",
-                        action:`Сброшен переопределённый статус: «${r.manual_status}» → расчётный` }];
-                      onUpdate(updated);
-                      message.success({ content:"Ручной статус сброшен", duration:2 });
-                    }}>
-                    Сбросить
-                  </Button>
-                )}
-              </>
+            {(isEditable||canOverride) && (s.undefined||canOverride) && (
+              <Button size="small" type="link" style={{ padding:0,fontSize:11,height:"auto" }}
+                icon={<EditOutlined/>}
+                onClick={() => { setManualModal({rowId:r.id,tmIdx}); setManualVal(r.manual_status||""); setManualReason(r.manual_reason||""); }}>
+                {s.undefined?"Указать статус":"Переопределить"}
+              </Button>
             )}
           </Space>
         );
@@ -456,42 +364,38 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
             style={{ flex:1, minWidth:280 }}
             items={[
               { title:"Черновик",    icon:<EditOutlined/> },
-              { title:"В работе",    icon:<ClockCircleOutlined/> },
+              { title:"В работе",    icon:<ToolOutlined/> },
               { title:"На проверке", icon:<SendOutlined/> },
               { title:prot.status==="Аннулирован"?"Аннулирован":"Подписан",
                 icon:prot.status==="Аннулирован"?<StopOutlined/>:<SafetyCertificateOutlined/> },
             ]}/>
           <Space wrap>
             {prot.status==="Черновик" && (
+              <Button type="primary" icon={<ToolOutlined/>} style={{ background:"#1890ff" }}
+                onClick={startWork}>Создать протокол</Button>
+            )}
+            {prot.status==="В работе" && (
               <Button type="primary" icon={<SendOutlined/>} style={{ background:"#1890ff" }}
                 onClick={() => transition("На проверке")}>Отправить на проверку</Button>
             )}
-            {prot.status==="В работе" && (
-              <>
-                <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("Черновик")}>Вернуть в черновики</Button>
-                <Button type="primary" icon={<SendOutlined/>} style={{ background:"#1890ff" }}
-                  onClick={() => transition("На проверке")}>Отправить на согласование</Button>
-              </>
-            )}
             {prot.status==="На проверке" && (<>
               <Button icon={<ArrowLeftOutlined/>} onClick={() => transition("В работе")}>Вернуть в работу</Button>
-              {getAllRows().some(r => r.fact === null || r.fact === undefined || r.fact === "") ? (
-                <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
-                  onClick={() => setSignConfirmModal(true)}>Подписать</Button>
-              ) : (
-                <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
-                  onClick={() => setConclusionModal(true)}>Подписать</Button>
-              )}
+              <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
+                onClick={() => setConclusionModal(true)}>Подписать</Button>
             </>)}
             {prot.status==="Подписан" && (
               <Button danger icon={<StopOutlined/>} onClick={() => setCancelModal(true)}>Аннулировать</Button>
             )}
-            <Button icon={<EyeOutlined/>} onClick={() => setPreviewOpen(true)}>Превью</Button>
-            {prot.status!=="Аннулирован" && (
-              <Button icon={<BugOutlined/>} style={{ borderColor:"#cf1322",color:"#cf1322" }}
-                onClick={handleCreateDefect}>Создать дефект</Button>
+            {!isDraft && (
+              <Button icon={<EyeOutlined/>} onClick={() => setPreviewOpen(true)}>Превью</Button>
             )}
-            <Button icon={<PrinterOutlined/>} onClick={() => setPrintModal(true)}>Печатная форма</Button>
+            {!isDraft && prot.status!=="Аннулирован" && (
+              <Button icon={<BugOutlined/>} style={{ borderColor:"#cf1322",color:"#cf1322" }}
+                onClick={() => setDefectModal(true)}>Создать дефект</Button>
+            )}
+            {!isDraft && (
+              <Button icon={<PrinterOutlined/>} onClick={() => setPrintModal(true)}>Печатная форма</Button>
+            )}
           </Space>
         </div>
         {prot.status==="Аннулирован" && prot.cancel_reason &&
@@ -507,77 +411,54 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           key:"rows", label:"Результаты измерений",
           children:(
             <Card size="small" style={{ borderRadius:8 }}>
-              {/* Условия измерений - вверху страницы */}
-              {(isEditable || env.temp !== undefined || env.humidity !== undefined || env.pressure !== undefined) && (
-                <div style={{ marginBottom:16, padding:12, background:"#f8fafc", borderRadius:6, border:"1px solid #e8ecef" }}>
-                  <Text strong style={{ fontSize:13, display:"block", marginBottom:8 }}>Условия измерений</Text>
-                  {isEditable ? (
-                    <Row gutter={16}>
-                      <Col span={8}>
-                        <Form.Item label="Температура">
-                          <InputNumber 
-                            value={env.temp} 
-                            onChange={v => handleEnvChange('temp', v)}
-                            min={-50} max={60} 
-                            style={{ width:"100%" }}
-                            placeholder="°C"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={8}>
-                        <Form.Item label="Влажность">
-                          <InputNumber 
-                            value={env.humidity} 
-                            onChange={v => handleEnvChange('humidity', v)}
-                            min={0} max={100} 
-                            style={{ width:"100%" }}
-                            placeholder="%"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={8}>
-                        <Form.Item label="Давление">
-                          <InputNumber 
-                            value={env.pressure} 
-                            onChange={v => handleEnvChange('pressure', v)}
-                            min={600} max={900} 
-                            style={{ width:"100%" }}
-                            placeholder="мм рт.ст"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-                  ) : (
-                    <Descriptions size="small" column={3} bordered
-                      labelStyle={{ background:"#f0f4f8",fontWeight:600,fontSize:12 }}
-                      contentStyle={{ fontSize:12 }}
-                      items={[
-                        { key:"temp", label:"Температура", children: <><Text strong>{env.temp !== undefined ? env.temp : '—'}</Text> <Text type="secondary">°C</Text></> },
-                        { key:"humidity", label:"Влажность", children: <><Text strong>{env.humidity !== undefined ? env.humidity : '—'}</Text> <Text type="secondary">%</Text></> },
-                        { key:"pressure", label:"Давление", children: <><Text strong>{env.pressure !== undefined ? env.pressure : '—'}</Text> <Text type="secondary">мм рт.ст</Text></> },
-                      ]}
-                    />
-                  )}
-                </div>
-              )}
               {prot.mode==="equipment" && (
                 <Table dataSource={prot.rows||[]} columns={makeRowCols()} rowKey="id" size="small" pagination={false}
                   rowClassName={r=>{ const s=getEffectiveStatus(r); return s.color==="error"?"row-err":s.color==="warning"?"row-warn-row":""; }}/>
               )}
               {prot.mode==="tm_list" && (
-                <Collapse defaultActiveKey={(prot.tm_groups||[]).map((_,i)=>String(i))} size="small" style={{ borderRadius:8 }}>
-                  {(prot.tm_groups||[]).map((g,gi)=>(
-                    <Panel key={String(gi)} header={
-                      <Space>
-                        <ApartmentOutlined style={{ color:"#1a5fa8" }}/>
-                        <Text strong style={{ fontSize:13 }}>{g.tm_name}</Text>
-                        {g.rows.some(r=>getEffectiveStatus(r).color==="error") &&
-                          <Tag color="error" style={{ fontSize:10 }}>Отклонение</Tag>}
-                      </Space>}>
-                      <Table dataSource={g.rows} columns={makeRowCols(gi)} rowKey="id" size="small" pagination={false}/>
-                    </Panel>
-                  ))}
-                </Collapse>
+                <div>
+                  {canEditTM && (
+                    <div style={{ display:"flex", gap:8, marginBottom:12, alignItems:"center" }}>
+                      <Select
+                        placeholder="Добавить техническое место..."
+                        value={addTmValue}
+                        onChange={setAddTmValue}
+                        style={{ width:320 }}
+                        allowClear
+                        showSearch
+                        filterOption={(input,opt)=>String(opt?.label??"").toLowerCase().includes(input.toLowerCase())}
+                        options={tmOptionsToAdd.map(t=>({ value:t.id, label:t.name }))}
+                        notFoundContent={<Text type="secondary" style={{ fontSize:12 }}>Все ТМ объекта уже добавлены</Text>}
+                      />
+                      <Button icon={<PlusOutlined/>} onClick={addTM} disabled={!addTmValue}>Добавить ТМ</Button>
+                      <Text type="secondary" style={{ fontSize:11, marginLeft:"auto" }}>
+                        Перечень ТМ можно менять на этапах «Черновик» и «В работе»
+                      </Text>
+                    </div>
+                  )}
+                  {(prot.tm_groups||[]).length===0 ? (
+                    <Empty description="Технические места не добавлены" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
+                  ) : (
+                    <Collapse defaultActiveKey={(prot.tm_groups||[]).map((_,i)=>String(i))} size="small" style={{ borderRadius:8 }}>
+                      {(prot.tm_groups||[]).map((g,gi)=>(
+                        <Panel key={String(gi)} header={
+                          <Space>
+                            <ApartmentOutlined style={{ color:"#1a5fa8" }}/>
+                            <Text strong style={{ fontSize:13 }}>{g.tm_name}</Text>
+                            {g.rows.some(r=>getEffectiveStatus(r).color==="error") &&
+                              <Tag color="error" style={{ fontSize:10 }}>Отклонение</Tag>}
+                          </Space>}
+                          extra={canEditTM && (
+                            <Button size="small" type="text" danger icon={<DeleteOutlined/>}
+                              onClick={(e) => { e.stopPropagation(); removeTM(g.tm_id, g.tm_name); }}
+                              title="Удалить ТМ из протокола"/>
+                          )}>
+                          <Table dataSource={g.rows} columns={makeRowCols(gi)} rowKey="id" size="small" pagination={false}/>
+                        </Panel>
+                      ))}
+                    </Collapse>
+                  )}
+                </div>
               )}
               {prot.mode==="equip_list" && (
                 <EquipListTable prot={prot} makeRowCols={makeRowCols}/>
@@ -599,46 +480,6 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
                   { key:"tt",   label:"Тип испытаний",     children:<Tag color="blue">{prot.test_type}</Tag> },
                   { key:"lab",  label:"Лаборатория (ЭТЛ)", children:lab?.name },
                   { key:"dept", label:"Подразделение-заказчик", children:deptLabel(prot.dept_id) },
-                  { key:"eq", label:"Объекты измерений", span:2,
-                    children:(() => {
-                      if (prot.mode === "equipment") {
-                        const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === prot.equip_id);
-                        return equip ? <Text>{equip.name} <Text type="secondary">(Зав.№{equip.serial})</Text></Text> : <Text type="secondary">не указано</Text>;
-                      }
-                      if (prot.mode === "equip_list") {
-                        const groups = prot.equip_groups || [];
-                        if (groups.length === 0) return <Text type="secondary">не указаны</Text>;
-                        return (
-                          <Space direction="vertical" size={4} style={{ width:"100%" }}>
-                            {groups.map(g => {
-                              const equip = EQUIP_ON_OBJECTS[prot.object_id]?.find(e => e.id === g.equip_id);
-                              return <div key={g.equip_id}>
-                                <ThunderboltOutlined style={{ color:"#1a5fa8", marginRight:6 }}/>
-                                <Text>{equip?.name || g.equip_id}</Text>
-                                {equip?.serial && <Text type="secondary" style={{ fontSize:11 }}> (Зав.№{equip.serial})</Text>}
-                              </div>;
-                            })}
-                          </Space>
-                        );
-                      }
-                      if (prot.mode === "tm_list") {
-                        const groups = prot.tm_groups || [];
-                        if (groups.length === 0) return <Text type="secondary">не указаны</Text>;
-                        return (
-                          <Space direction="vertical" size={4} style={{ width:"100%" }}>
-                            {groups.map(g => {
-                              const tm = TM_ON_OBJECTS[prot.object_id]?.find(t => t.id === g.tm_id);
-                              return <div key={g.tm_id}>
-                                <ApartmentOutlined style={{ color:"#1a5fa8", marginRight:6 }}/>
-                                <Text>{tm?.name || g.tm_id}</Text>
-                              </div>;
-                            })}
-                          </Space>
-                        );
-                      }
-                      return <Text type="secondary">—</Text>;
-                    })()
-                  },
                   { key:"d",    label:"Дата измерений",    children:prot.date_measured },
                   // Условия измерений — только заполненные поля
                   ...(Object.entries(prot.env||{}).filter(([,v])=>v!==null&&v!==undefined).map(([k,v])=>({
@@ -713,75 +554,15 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
           label:<span>Дефекты {prot.defects?.length>0 && <Tag style={{ fontSize:10 }}>{prot.defects.length}</Tag>}</span>,
           children:(
             <Card size="small" style={{ borderRadius:8 }}
-              extra={<Button size="small" icon={<BugOutlined/>} onClick={handleCreateDefect} disabled={badCount === 0 || getEntitiesWithDeviations().length === 0 || getEntitiesWithDeviations().every(e => (prot.defects || []).some(d => d.entity_id === e.id))}>Создать</Button>}>
+              extra={<Button size="small" icon={<BugOutlined/>} onClick={()=>setDefectModal(true)}>Создать</Button>}>
               {!prot.defects?.length
                 ? <Empty description="Дефекты не зафиксированы" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
-                : prot.defects.map(d=>{
-                    // Пытаемся получить информацию об отклонениях
-                    let badRowsInfo = d.badRows || [];
-                    // Если badRows не сохранены в дефекте - извлекаем из текущего протокола
-                    // с учётом привязки к конкретной сущности (entity_id)
-                    if (badRowsInfo.length === 0 && d.entity_id) {
-                      let allRows = [];
-                      if (prot.mode === "equipment") {
-                        allRows = prot.rows || [];
-                      } else if (prot.mode === "tm_list") {
-                        const group = (prot.tm_groups || []).find(g => g.tm_id === d.entity_id);
-                        allRows = group?.rows || [];
-                      } else if (prot.mode === "equip_list") {
-                        const group = (prot.equip_groups || []).find(g => g.equip_id === d.entity_id);
-                        allRows = group?.rows || [];
-                      }
-                      const entityRows = allRows.filter(r => {
-                        const s = getEffectiveStatus(r);
-                        return s.color === "error" || s.color === "warning";
-                      });
-                      badRowsInfo = entityRows.map(r => {
-                        const s = getEffectiveStatus(r);
-                        return {
-                          param_name: r.param_name,
-                          unit: r.unit,
-                          fact: r.fact,
-                          zone_label: s.label,
-                          zone_color: s.color
-                        };
-                      });
-                    }
-                    const descMatch = d.description?.match(/Без норматива: (\d+)/);
-                    const undefinedCount = descMatch ? parseInt(descMatch[1]) : 0;
-                    return (
-                    <Alert key={d.id} type={d.severity === "error" ? "error" : "warning"} showIcon icon={<BugOutlined/>}
-                      message={<Space><Text strong style={{ fontSize:12 }}>{d.title}</Text>
-                        {d.severity && <Tag color={d.severity === "error" ? "red" : "orange"} style={{ fontSize: 10 }}>
-                          {d.severity === "error" ? "Критический" : "Некритический"}</Tag>}
-                        <Button size="small" type="text" danger icon={<DeleteOutlined/>} onClick={() => {
-                          const updated = {...prot, defects: (prot.defects || []).filter(def => def.id !== d.id)};
-                          onUpdate(updated);
-                          api.success({ message:"Дефект удалён", duration:2 });
-                        }}/>
-                      </Space>}
-                      description={<Space direction="vertical" size={2}>
-                        <Text type="secondary" style={{ fontSize:11 }}>{d.description} · {d.created}</Text>
-                        {d.entity_name && <Text type="secondary" style={{ fontSize: 10 }}>Привязан к: {d.entity_name}</Text>}
-                        {badRowsInfo.length > 0 && (
-                          <div style={{ marginTop: 8, background: "#f5f5f5", padding: "8px 10px", borderRadius: 4 }}>
-                            <Text strong style={{ fontSize: 11 }}>Отклонения:</Text>
-                            {badRowsInfo.map((br, idx) => (
-                              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                                <Text style={{ fontSize: 11 }}>{br.param_name}:</Text>
-                                <Text strong style={{ fontSize: 11 }}>{br.fact} {br.unit}</Text>
-                                <Tag color={br.zone_color} style={{ fontSize: 10, margin: 0 }}>{br.zone_label}</Tag>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {badRowsInfo.length === 0 && undefinedCount > 0 && (
-                          <Text type="secondary" style={{ fontSize: 10, color: "#fa8c16" }}>⚠ {undefinedCount} параметр(а) без норматива</Text>
-                        )}
-                      </Space>}
+                : prot.defects.map(d=>(
+                    <Alert key={d.id} type="warning" showIcon icon={<BugOutlined/>}
+                      message={<Text strong style={{ fontSize:12 }}>{d.title}</Text>}
+                      description={<Text type="secondary" style={{ fontSize:11 }}>{d.description} · {d.created}</Text>}
                       style={{ marginBottom:8 }}/>
-                    );
-                  })
+                  ))
               }
             </Card>
           )
@@ -808,54 +589,6 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
         {undefinedCount>0 && <Alert type="info" showIcon message={`${undefinedCount} строк без норматива`} style={{ marginTop:8 }}/>}
       </Modal>
 
-      {/* Модал подтверждения подписания с удалением незаполненных измерений */}
-      <Modal
-        title={<span style={{ color:"#cf1322" }}><WarningOutlined/> Подтверждение подписания</span>}
-        open={signConfirmModal}
-        onCancel={() => setSignConfirmModal(false)}
-        footer={
-          <Space>
-            <Button onClick={() => setSignConfirmModal(false)}>Отмена</Button>
-            <Button type="primary" style={{ background:"#389e0d" }}
-              onClick={() => {
-                // Удаляем измерения без значений fact и обновляем протокол
-                const updated = {...prot};
-                if (prot.mode === "equipment") {
-                  updated.rows = (prot.rows || []).filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "");
-                } else if (prot.mode === "tm_list") {
-                  updated.tm_groups = (prot.tm_groups || []).map(g => ({
-                    ...g,
-                    rows: g.rows.filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "")
-                  }));
-                } else if (prot.mode === "equip_list") {
-                  updated.equip_groups = (prot.equip_groups || []).map(g => ({
-                    ...g,
-                    rows: g.rows.filter(r => r.fact !== null && r.fact !== undefined && r.fact !== "")
-                  }));
-                }
-                // Сохраняем обновленный протокол
-                onUpdate(updated);
-                // Закрываем текущий модал и открываем модал выбора заключения
-                setSignConfirmModal(false);
-                setConclusionModal(true);
-              }}>
-              Подписать
-            </Button>
-          </Space>
-        }
-      >
-        <Alert
-          type="warning"
-          showIcon
-          message="Внимание!"
-          description="Все характеристики без указанных данных измерений будут удалены из итогового протокола."
-          style={{ marginBottom: 16 }}
-        />
-        <Text type="secondary">
-          После подписания протокола измерения без внесённых значений не будут отображаться в документе.
-        </Text>
-      </Modal>
-
       <Modal title={<span style={{ color:"#cf1322" }}><StopOutlined/> Аннулирование</span>}
         open={cancelModal}
         onOk={() => {
@@ -871,33 +604,11 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
 
       <Modal title={canOverride ? "Переопределение статуса строки" : "Указать статус (норматив не задан)"}
         open={!!manualModal}
-        onCancel={() => { setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal"); }}
-        footer={
-          <Space>
-            {manualVal && (
-              <Button onClick={resetManual}>Сбросить к расчётному</Button>
-            )}
-            <Button onClick={() => { setManualModal(null); setManualVal(""); setManualReason(""); setManualSeverity("normal"); }}>Отмена</Button>
-            <Button type="primary" onClick={applyManual}>Применить</Button>
-          </Space>
-        }>
-        <Row gutter={12} style={{ marginBottom:12 }}>
-          <Col span={12}>
-            <Form.Item label="Критичность" style={{ marginBottom:0 }}>
-              <Select value={manualSeverity} onChange={v=>setManualSeverity(v)} style={{ width:"100%" }}>
-                <Option value="normal">Норма</Option>
-                <Option value="warning">Предупреждение</Option>
-                <Option value="critical">Критическое</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Статус" style={{ marginBottom:0 }}>
-              <Input value={manualVal} onChange={e=>setManualVal(e.target.value)}
-                placeholder="Норма, Отклонение..."/>
-            </Form.Item>
-          </Col>
-        </Row>
+        onOk={applyManual}
+        onCancel={() => { setManualModal(null); setManualVal(""); setManualReason(""); }}
+        okText="Применить">
+        <Input value={manualVal} onChange={e=>setManualVal(e.target.value)}
+          placeholder="Статус: Норма, Отклонение, Предельное состояние..." style={{ marginBottom:12 }}/>
         <Input.TextArea rows={2} value={manualReason} onChange={e=>setManualReason(e.target.value)}
           placeholder="Обоснование (обязательно)..."/>
       </Modal>
@@ -905,100 +616,16 @@ export default function ProtocolCard({ prot, workTypes, params, instruments, onB
       <Modal title={<span><BugOutlined style={{ color:"#cf1322",marginRight:8 }}/>Создание дефекта</span>}
         open={defectModal}
         onOk={() => {
-          const entitiesWithDeviations = getEntitiesWithDeviations();
-          const entity = defectEntity || entitiesWithDeviations[0];
-          const severityLabel = entity?.severity === "error" ? "Критическое" : "Некритическое";
-          // Собираем информацию об отклонениях
-          const badRowsDetails = (entity?.badRows || []).map(br => `${br.param_name}: ${br.fact} ${br.unit} → ${br.zone_label}`).join("; ");
-          const d = { 
-            id:`d${Date.now()}`, 
-            title:`Дефект из протокола ${prot.number}`,
-            description:`Выявлено при испытаниях. ${entity ? `Сущность: ${entity.name}. ` : ""}Критичность: ${severityLabel}. Отклонений: ${badCount}. ${badRowsDetails ? `Параметры: ${badRowsDetails}. ` : ""}Без норматива: ${undefinedCount}.`,
-            created:new Date().toISOString().slice(0,10),
-            entity_type: entity?.type || null,
-            entity_id: entity?.id || null,
-            entity_name: entity?.name || null,
-            severity: entity?.severity || null,
-            badRows: entity?.badRows || []
-          };
+          const d = { id:`d${Date.now()}`, title:`Дефект из протокола ${prot.number}`,
+            description:`Выявлено при испытаниях. Отклонений: ${badCount}. Без норматива: ${undefinedCount}.`,
+            created:new Date().toISOString().slice(0,10) };
           onUpdate({...prot, defects:[...(prot.defects||[]),d]});
-          setDefectModal(false); 
-          setDefectEntity(null);
-          api.success({ message:"Дефект создан", duration:2 });
+          setDefectModal(false); api.success({ message:"Дефект создан", duration:2 });
         }}
-        onCancel={() => { setDefectModal(false); setDefectEntity(null); }} 
-        okText="Создать дефект" 
-        okButtonProps={{ danger:true }}
-        okDisabled={!defectEntity && getEntitiesWithDeviations().length > 1}
-      >
+        onCancel={() => setDefectModal(false)} okText="Создать дефект" okButtonProps={{ danger:true }}>
         <Alert type="info" showIcon style={{ marginBottom:12 }}
           message="Дефект будет создан с привязкой к протоколу и объекту."/>
         <Text type="secondary" style={{ fontSize:12 }}>Объект: {obj?.name}</Text>
-        
-        {/* Выбор сущности с отклонениями */}
-        {getEntitiesWithDeviations().length > 1 && (
-          <div style={{ marginTop: 16 }}>
-            <Text strong style={{ display: "block", marginBottom: 8 }}>Выберите сущность с отклонениями:</Text>
-            <Radio.Group 
-              value={defectEntity?.id} 
-              onChange={(e) => {
-                const selected = getEntitiesWithDeviations().find(ent => ent.id === e.target.value);
-                setDefectEntity(selected);
-              }}
-              style={{ width: "100%" }}
-            >
-              <Space direction="vertical" style={{ width: "100%" }}>
-                {getEntitiesWithDeviations().map(ent => (
-                  <Radio key={ent.id} value={ent.id} style={{ width: "100%", marginRight: 0 }}>
-                    <Space align="center">
-                      <Text>{ent.name}</Text>
-                      <Tag color={ent.severity === "error" ? "red" : "orange"} style={{ marginLeft: 8 }}>
-                        {ent.severity === "error" ? "Критическое" : "Некритическое"}
-                      </Tag>
-                      <Text type="secondary" style={{ fontSize: 11 }}>({ent.deviationCount} отклонение{ent.deviationCount > 1 ? "ий" : "ие"})</Text>
-                    </Space>
-                  </Radio>
-                ))}
-              </Space>
-            </Radio.Group>
-          </div>
-        )}
-        
-        {/* Отображение выбранной сущности и её отклонений */}
-        {(defectEntity || (getEntitiesWithDeviations().length === 1 && getEntitiesWithDeviations()[0])) && (
-          <div style={{ marginTop: 16, padding: 12, background: "#f6f8fa", borderRadius: 6 }}>
-            {(() => {
-              const entity = defectEntity || getEntitiesWithDeviations()[0];
-              return (
-                <>
-                  <Space style={{ marginBottom: 12 }}>
-                    <Text strong>Сущность:</Text>
-                    <Text>{entity.name}</Text>
-                    <Tag color={entity.severity === "error" ? "red" : "orange"}>
-                      {entity.severity === "error" ? "Критическое" : "Некритическое"}
-                    </Tag>
-                  </Space>
-                  {entity.badRows && entity.badRows.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <Text strong style={{ fontSize: 12 }}>Отклонённые параметры:</Text>
-                      <div style={{ background: "#fff", padding: 8, borderRadius: 4, marginTop: 6 }}>
-                        {entity.badRows.map((br, idx) => (
-                          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <Text style={{ fontSize: 12 }}>{br.param_name}:</Text>
-                            <Text strong style={{ fontSize: 12, color: br.zone_color === "error" ? "#cf1322" : "#fa8c16" }}>
-                              {br.fact} {br.unit}
-                            </Text>
-                            <Tag color={br.zone_color} style={{ fontSize: 10, margin: 0 }}>{br.zone_label}</Tag>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
       </Modal>
 
 

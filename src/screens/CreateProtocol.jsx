@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Form, Input, Select, TreeSelect, Row, Col, Card, Button, Space,
   InputNumber, Alert, Divider, Table, Tag, Tooltip, Typography, Steps, Breadcrumb,
@@ -10,34 +10,17 @@ import {
   OBJECTS, EQUIP_ON_OBJECTS, TM_ON_OBJECTS, NOMENCLATURES, EQUIP_TYPES,
   DEPT_TREE_DATA, EMPLOYEES, LABS, empName
 } from "../data/mockData";
-import { uid, genNum, calcZoneStatus, calStatus } from "../utils/helpers";
+import { uid, genNum, calcZoneStatus, calStatus, findNorm } from "../utils/helpers";
 import { NormSourceBadge, CalTag } from "../components/shared";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Цепочка приоритетов норматива
-function findNorm(paramId, equipObj, normRanges, passportNorms, overrides, params) {
-  if (!equipObj) return { zones:[], source:"" };
-  const ov_tmcz = overrides.find(o=>o.active&&o.bind_type==="tmcz"&&o.bind_id===equipObj.id&&o.param_id===paramId);
-  if (ov_tmcz) return { zones:ov_tmcz.zones, source:`Переопределение · ТМЦ ${equipObj.name}` };
-  const ov_nm = overrides.find(o=>o.active&&o.bind_type==="nomenclature"&&o.bind_id===equipObj.nm_id&&o.param_id===paramId);
-  if (ov_nm) { const nm=NOMENCLATURES.find(x=>x.id===equipObj.nm_id); return { zones:ov_nm.zones, source:`Переопределение · ${nm?.name}` }; }
-  const ov_type = overrides.find(o=>o.active&&o.bind_type==="equipment_type"&&o.bind_id===equipObj.type_id&&o.param_id===paramId);
-  if (ov_type) { const t=EQUIP_TYPES.find(x=>x.id===equipObj.type_id); return { zones:ov_type.zones, source:`Переопределение · Тип ТМЦ: ${t?.name}` }; }
-  const pn = passportNorms.find(x=>x.param_id===paramId&&x.nomenclature_ids.includes(equipObj.nm_id));
-  if (pn) { const nm=NOMENCLATURES.find(x=>x.id===equipObj.nm_id); return { zones:pn.zones, source:`Паспортный норматив · ${nm?.name}` }; }
-  const nr = normRanges.find(x=>x.param_id===paramId&&x.type_id===equipObj.type_id);
-  if (nr) { const t=EQUIP_TYPES.find(x=>x.id===equipObj.type_id); return { zones:nr.zones, source:`Норм. диапазон · ${t?.name}` }; }
-  return { zones:[], source:"" };
-}
-
 export default function CreateProtocol({
   protocols, normRanges, passportNorms, overrides,
   workTypes, params, instruments,
-  onSave, onCancel, editProtocol
+  onSave, onCancel
 }) {
-  const isEditMode = !!editProtocol;
   const [step, setStep]       = useState(0);
   const [form] = Form.useForm();
   const [mode, setMode]       = useState(null);
@@ -50,87 +33,14 @@ export default function CreateProtocol({
   const [reviewerId, setReviewerId] = useState(null);
   const [instrIds, setInstrIds]     = useState([]);
   const [deptId, setDeptId]         = useState(null);
-  // env fields (temp, humidity, pressure) now filled in ProtocolCard when status is "В работе"
-  // const [env, setEnv] = useState({});
+  const [env, setEnv]               = useState({});
 
   const wt        = workTypes.find(w => w.id === wtId);
-  const equipListRaw = objId ? (EQUIP_ON_OBJECTS[objId] || []) : [];
+  const equipList = objId ? (EQUIP_ON_OBJECTS[objId] || []) : [];
   const tmList    = objId ? (TM_ON_OBJECTS[objId]    || []) : [];
   const envFields = wt?.env_fields || {};
 
-  // Фильтрация оборудования: только с отклонениями и без назначенных дефектов
-  const equipList = equipListRaw.filter(eq => {
-    // Собираем все протоколы для этого объекта
-    const objProtocols = protocols.filter(p => p.object_id === objId);
-    // Ищем отклонения для этого оборудования
-    let hasDeviation = false;
-    let hasDefect = false;
-    
-    for (const prot of objProtocols) {
-      // Проверяем режим single equipment
-      if (prot.mode === "equipment" && prot.equip_id === eq.id) {
-        const badRows = (prot.rows || []).filter(r => r.auto_status === "error" || r.manual_status === "Предельное состояние");
-        if (badRows.length > 0) hasDeviation = true;
-        if ((prot.defects || []).some(d => d.entity_id === eq.id)) hasDefect = true;
-      }
-      // Проверяем режим equip_list
-      if (prot.mode === "equip_list") {
-        const group = (prot.equip_groups || []).find(g => g.equip_id === eq.id);
-        if (group) {
-          const badRows = (group.rows || []).filter(r => r.auto_status === "error" || r.manual_status === "Предельное состояние");
-          if (badRows.length > 0) hasDeviation = true;
-        }
-        if ((prot.defects || []).some(d => d.entity_id === eq.id)) hasDefect = true;
-      }
-    }
-    
-    // Включаем оборудование если есть отклонение и нет дефекта
-    return hasDeviation && !hasDefect;
-  });
-
   const activeInstruments = instruments.filter(i => !i.archived);
-
-  // Инициализация из editProtocol при редактировании
-  // или сброс при создании нового протокола
-  useEffect(() => {
-    if (!editProtocol) {
-      // Сброс всех полей при создании нового протокола
-      setStep(0);
-      setObjId(null);
-      setWtId(null);
-      setMode(null);
-      setEquipId(null);
-      setSelTMs([]);
-      setSelEquips([]);
-      setExecIds([]);
-      setReviewerId(null);
-      setInstrIds([]);
-      setDeptId(null);
-      // setEnv({}); // env now filled in ProtocolCard
-      form.resetFields();
-      return;
-    }
-    setObjId(editProtocol.object_id || null);
-    setWtId(editProtocol.work_type_id || null);
-    setMode(editProtocol.mode || null);
-    setEquipId(editProtocol.equip_id || null);
-    setSelTMs(editProtocol.tm_groups?.map(g => g.tm_id) || []);
-    setSelEquips(editProtocol.equip_groups?.map(g => g.equip_id) || []);
-    setExecIds(editProtocol.executor_ids || []);
-    setReviewerId(editProtocol.reviewer_id || null);
-    setInstrIds(editProtocol.instrument_ids || []);
-    setDeptId(editProtocol.dept_id || null);
-    // setEnv(editProtocol.env || {}); // env now filled in ProtocolCard
-    if (editProtocol.object_id && editProtocol.work_type_id && editProtocol.mode) {
-      setStep(1);
-      if ((editProtocol.mode === "equipment" && editProtocol.equip_id) ||
-          (editProtocol.mode === "tm_list" && editProtocol.tm_groups?.length) ||
-          (editProtocol.mode === "equip_list" && editProtocol.equip_groups?.length)) {
-        setStep(2);
-      }
-    }
-    form.setFieldsValue({ date_measured: editProtocol.date_measured });
-  }, [editProtocol]);
 
   const can1 = objId && wtId && mode;
   const can2 = (
@@ -139,93 +49,55 @@ export default function CreateProtocol({
     selTMs.length > 0
   ) && executorIds.length > 0 && deptId;
 
+  // Wizard формирует только метаданные протокола (статус «Черновик»).
+  // Строки измерений НЕ вычисляются здесь: они генерируются позже, при нажатии
+  // кнопки «Создать протокол» на карточке (переход «Черновик» → «В работе»,
+  // ФТ-ЖЦ2). Это разделение — намеренное архитектурное решение (раздел 6.1
+  // Architecture Decisions): повторное использование шапки без потери введённых
+  // измерений, явный момент генерации строк по актуальному шаблону вида работы.
+  //
+  // Тем не менее выбранные на шаге 2 единицы оборудования / технические места
+  // сохраняются уже сейчас как «скелет» групп (equip_groups / tm_groups) с
+  // пустым rows[] — чтобы при последующем формировании строк (startWork в
+  // ProtocolCard) не потерять сделанный пользователем выбор объектов измерений.
   function handleFinish() {
     const vals = form.getFieldsValue(true);
-    const equip = equipList.find(e => e.id === equipId);
-    const now   = new Date().toISOString().slice(0,10);
-    let rows = [], tm_groups = [];
+    const now  = new Date().toISOString().slice(0,10);
 
-    if (mode === "equipment" && wt && equip) {
-      rows = wt.params.map(pt => {
-        const pr = params.find(p => p.id === pt.param_id);
-        const { zones, source } = findNorm(pt.param_id, equip, normRanges, passportNorms, overrides, params);
-        return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
-          zones, norm_source:source, fact:null, note:"",
-          auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
-      });
-    } else if (mode === "equip_list" && wt) {
-      // Группы по единицам оборудования — шапка-разделитель + строки параметров
-      // Норматив ищется для каждой единицы отдельно по цепочке приоритетов
-      const equip_groups = selEquips.map(eqId => {
-        const eq = equipList.find(e => e.id === eqId);
-        return {
-          equip_id: eqId,
-          equip_name: eq?.name || eqId,
-          serial: eq?.serial || "",
-          rows: wt.params.map(pt => {
-            const pr = params.find(p => p.id === pt.param_id);
-            const { zones, source } = findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, params);
-            return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
-              zones, norm_source:source, fact:null, note:"",
-              auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
-          })
-        };
-      });
-      // equip_groups передаётся отдельным полем в newProt ниже
-    } else if (mode === "tm_list" && wt) {
-      tm_groups = selTMs.map(tmId => {
-        const tm = tmList.find(t => t.id === tmId);
-        return {
-          tm_id:tmId, tm_name:tm?.name || tmId,
-          rows: wt.params.map(pt => {
-            const pr = params.find(p => p.id === pt.param_id);
-            // Для ТМ ищем нормативы по work_type_id и param_id (без привязки к типу оборудования)
-            const nr = normRanges.find(x => x.param_id === pt.param_id && x.work_type_id === wt.id);
-            const zones = nr ? nr.zones : [];
-            const source = nr ? nr.source : "";
-            return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
-              zones, norm_source:source, fact:null, note:"",
-              auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
-          })
-        };
-      });
-    }
+    const equip_groups_skeleton = mode === "equip_list"
+      ? selEquips.map(eqId => {
+          const eq = equipList.find(e => e.id === eqId);
+          return { equip_id: eqId, equip_name: eq?.name || eqId, serial: eq?.serial || "", rows: [] };
+        })
+      : undefined;
 
-    // envData will be filled in ProtocolCard when status is "В работе"
+    const tm_groups_skeleton = mode === "tm_list"
+      ? selTMs.map(tmId => {
+          const tm = tmList.find(t => t.id === tmId);
+          return { tm_id: tmId, tm_name: tm?.name || tmId, rows: [] };
+        })
+      : [];
+
     const envData = {};
+    if (envFields.temp     && env.temp     !== undefined) envData.temp     = env.temp;
+    if (envFields.humidity && env.humidity !== undefined) envData.humidity = env.humidity;
+    if (envFields.pressure && env.pressure !== undefined) envData.pressure = env.pressure;
 
     const newProt = {
-      id: isEditMode ? editProtocol.id : uid(),
-      number: isEditMode ? editProtocol.number : genNum(protocols),
+      id:uid(), number:genNum(protocols),
       date_created:now, date_measured:vals.date_measured || now,
       object_id:objId, work_type_id:wtId, test_type:wt?.type || "Эксплуатационные",
       lab_id:vals.lab_id, dept_id:deptId,
       executor_ids:executorIds, reviewer_id:reviewerId,
       instrument_ids:instrIds,
       mode, equip_id:mode==="equipment" ? equipId : null,
-      equip_groups:mode==="equip_list" ? (() => {
-        return selEquips.map(eqId => {
-          const eq = equipList.find(e => e.id === eqId);
-          return {
-            equip_id: eqId,
-            equip_name: eq?.name || eqId,
-            serial: eq?.serial || "",
-            rows: wt.params.map(pt => {
-              const pr = params.find(p => p.id === pt.param_id);
-              const { zones, source } = findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, params);
-              return { id:uid(), param_id:pr.id, param_name:pr.name, unit:pr.unit,
-                zones, norm_source:source, fact:null, note:"",
-                auto_status:null, manual_status:null, manual_reason:"", is_overridden:false };
-            })
-          };
-        });
-      })() : undefined,
-      env:envData,
-      status:"В работе", date_signed:null, signed_by:null,
+      equip_groups: equip_groups_skeleton,
+      env:envData, voltage_test:vals.voltage_test || null,
+      status:"Черновик", date_signed:null, signed_by:null,
       conclusion_type:null, conclusion_text:"", cancel_reason:null, defects:[],
-      rows, tm_groups,
+      rows: [], tm_groups: tm_groups_skeleton,
       history:[{ date:now+" "+new Date().toTimeString().slice(0,5),
-        user:executorIds[0]||"?", action:"Создан (Черновик)" }]
+        user:executorIds[0]||"?", action:"Создан (Черновик). Строки измерений будут сформированы при переходе в «В работе»." }]
     };
     onSave(newProt);
   }
@@ -433,8 +305,48 @@ export default function CreateProtocol({
         {/* ─── ШАГ 3 ───────────────────────────────────────────────────────── */}
         {step === 2 && (
           <Card style={{ borderRadius:8 }}>
-            <Alert type="info" showIcon style={{ marginBottom:16 }}
-              message="Параметры окружающей среды (температура, влажность, давление) заполняются на форме внесения данных измерений" />
+            {/* Условия измерений — только поля из настройки вида работы */}
+            {(envFields.temp || envFields.humidity || envFields.pressure) ? (
+              <div style={{ marginBottom:16 }}>
+                <Text strong style={{ fontSize:13 }}>Условия измерений</Text>
+                <Text type="secondary" style={{ fontSize:11, marginLeft:8 }}>
+                  (все поля необязательные)
+                </Text>
+                <Row gutter={12} style={{ marginTop:10 }}>
+                  {envFields.temp && (
+                    <Col span={8}>
+                      <Form.Item label="Температура воздуха, °C">
+                        <InputNumber value={env.temp} onChange={v=>setEnv(e=>({...e,temp:v}))}
+                          min={-50} max={60} style={{ width:"100%" }}/>
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {envFields.humidity && (
+                    <Col span={8}>
+                      <Form.Item label="Относительная влажность, %">
+                        <InputNumber value={env.humidity} onChange={v=>setEnv(e=>({...e,humidity:v}))}
+                          min={0} max={100} style={{ width:"100%" }}/>
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {envFields.pressure && (
+                    <Col span={8}>
+                      <Form.Item label="Атм. давление, мм рт. ст.">
+                        <InputNumber value={env.pressure} onChange={v=>setEnv(e=>({...e,pressure:v}))}
+                          min={600} max={900} style={{ width:"100%" }}/>
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              </div>
+            ) : (
+              <Alert type="default" showIcon style={{ marginBottom:16 }}
+                message="Для данного вида работы параметры среды не настроены"/>
+            )}
+
+            <Form.Item label="Напряжение испытания, кВ" name="voltage_test">
+              <InputNumber min={0} style={{ width:"100%" }}/>
+            </Form.Item>
 
             {/* Измерительные приборы */}
             <Divider/>
@@ -484,7 +396,7 @@ export default function CreateProtocol({
                     const pr = params.find(p => p.id===pt.param_id);
                     const eq = equipList.find(e => e.id===equipId);
                     const { zones, source } = eq
-                      ? findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, params)
+                      ? findNorm(pt.param_id, eq, normRanges, passportNorms, overrides, EQUIP_TYPES, NOMENCLATURES)
                       : { zones:[], source:"" };
                     return { key:pt.param_id, name:pr?.name, unit:pr?.unit, source, zones };
                   })}
@@ -504,7 +416,7 @@ export default function CreateProtocol({
               <Button onClick={() => setStep(1)}>← Назад</Button>
               <Space>
                 <Button onClick={onCancel}>Отмена</Button>
-                <Button type="primary" icon={<PlusOutlined/>} onClick={handleFinish}>Создать протокол</Button>
+                <Button type="primary" icon={<PlusOutlined/>} onClick={handleFinish}>Сохранить черновик</Button>
               </Space>
             </div>
           </Card>
