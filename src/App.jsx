@@ -66,6 +66,15 @@ export default function App() {
   function openProt(id)  { setActiveProtId(id); setScreen("card"); setMenuKey("protocols"); }
   function saveProt(p)   { setProtocols(prev => [p,...prev]); setActiveProtId(p.id); setScreen("card"); }
   function updateProt(p) { setProtocols(prev => prev.map(x => x.id===p.id ? p : x)); }
+  // Физическое удаление допустимо только для протоколов в статусе «Черновик» —
+  // на этом этапе в протоколе ещё нет ни одного введённого фактического значения
+  // (строки измерений формируются лишь при переходе в «В работе»), поэтому
+  // удаление ничего не стирает из истории выполненной работы. Для всех
+  // последующих статусов используется «Аннулирование» с обязательной причиной.
+  function deleteProt(id) {
+    setProtocols(prev => prev.filter(x => x.id !== id));
+    nav("list", "protocols");
+  }
 
   const nav = (s, k) => { setScreen(s); setMenuKey(k || s); };
 
@@ -143,7 +152,7 @@ export default function App() {
               <ProtocolCard
                 prot={activeProt} workTypes={workTypes} params={params} instruments={instruments}
                 normRanges={normRanges} passportNorms={passportNorms} overrides={overrides}
-                onBack={() => nav("list","protocols")} onUpdate={updateProt}/>
+                onBack={() => nav("list","protocols")} onUpdate={updateProt} onDelete={deleteProt}/>
             )}
             {screen==="create" && (
               <CreateProtocol

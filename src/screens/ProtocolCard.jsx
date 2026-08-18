@@ -105,7 +105,7 @@ function EquipListTable({ prot, makeRowCols }) {
 
 export default function ProtocolCard({
   prot, workTypes, params, instruments, normRanges, passportNorms, overrides,
-  onBack, onUpdate
+  onBack, onUpdate, onDelete
 }) {
   const [api, ctx] = notification.useNotification();
   const [conclusionModal, setConclusionModal] = useState(false);
@@ -113,6 +113,7 @@ export default function ProtocolCard({
   const [conclusionText,  setConclusionText]  = useState("");
   const [cancelModal, setCancelModal]         = useState(false);
   const [cancelReason, setCancelReason]       = useState("");
+  const [deleteModal, setDeleteModal]         = useState(false);
   const [defectModal, setDefectModal]         = useState(false);
   const [previewOpen, setPreviewOpen]         = useState(false);
   const [manualModal, setManualModal]         = useState(null); // {rowId, tmIdx}
@@ -125,6 +126,10 @@ export default function ProtocolCard({
   const isEditable   = prot.status === "В работе";
   const canOverride  = prot.status === "На проверке";
   const canEditTM    = isDraft || isEditable; // добавление/удаление ТМ доступно в обоих статусах
+  // Аннулировать можно из любого статуса, где протокол уже мог содержать
+  // введённые данные (В работе, На проверке, Подписан) — но не из Черновика
+  // (там для этого есть физическое удаление) и не повторно из Аннулирован.
+  const canCancel = ["В работе","На проверке","Подписан"].includes(prot.status);
   const obj  = OBJECTS.find(o => o.id===prot.object_id);
   const wt   = workTypes.find(w => w.id===prot.work_type_id);
   const lab  = LABS.find(l => l.id===prot.lab_id);
@@ -359,7 +364,10 @@ export default function ProtocolCard({
       <Card size="small" style={{ marginBottom:16, borderRadius:8 }}
         title={<Text style={{ fontSize:13,fontWeight:600 }}>Жизненный цикл и действия</Text>}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:16, flexWrap:"wrap" }}>
-          <Steps size="small" current={statusCfgStep[prot.status]??0}
+          <Steps size="small"
+            current={prot.status==="Аннулирован"
+              ? (statusCfgStep[prot.cancelled_from_status] ?? 3)
+              : (statusCfgStep[prot.status] ?? 0)}
             status={prot.status==="Аннулирован"?"error":"process"}
             style={{ flex:1, minWidth:280 }}
             items={[
@@ -383,8 +391,11 @@ export default function ProtocolCard({
               <Button type="primary" icon={<SafetyCertificateOutlined/>} style={{ background:"#389e0d" }}
                 onClick={() => setConclusionModal(true)}>Подписать</Button>
             </>)}
-            {prot.status==="Подписан" && (
+            {canCancel && (
               <Button danger icon={<StopOutlined/>} onClick={() => setCancelModal(true)}>Аннулировать</Button>
+            )}
+            {isDraft && (
+              <Button danger icon={<DeleteOutlined/>} onClick={() => setDeleteModal(true)}>Удалить черновик</Button>
             )}
             {!isDraft && (
               <Button icon={<EyeOutlined/>} onClick={() => setPreviewOpen(true)}>Превью</Button>
@@ -399,7 +410,9 @@ export default function ProtocolCard({
           </Space>
         </div>
         {prot.status==="Аннулирован" && prot.cancel_reason &&
-          <Alert type="error" showIcon message={`Причина аннулирования: ${prot.cancel_reason}`} style={{ marginTop:10 }}/>}
+          <Alert type="error" showIcon
+            message={`Причина аннулирования${prot.cancelled_from_status ? ` (из статуса «${prot.cancelled_from_status}»)` : ""}: ${prot.cancel_reason}`}
+            style={{ marginTop:10 }}/>}
         {prot.conclusion_text && prot.status==="Подписан" &&
           <Alert type={badCount>0?"warning":"success"} showIcon message="Заключение"
             description={prot.conclusion_text} style={{ marginTop:10 }}/>}
@@ -593,13 +606,24 @@ export default function ProtocolCard({
         open={cancelModal}
         onOk={() => {
           if (!cancelReason.trim()) { api.warning({ message:"Укажите причину" }); return; }
-          transition("Аннулирован", { cancel_reason:cancelReason });
+          transition("Аннулирован", { cancel_reason:cancelReason, cancelled_from_status:prot.status });
           setCancelModal(false); setCancelReason("");
         }}
         onCancel={() => { setCancelModal(false); setCancelReason(""); }}
         okText="Аннулировать" okButtonProps={{ danger:true }}>
-        <Alert type="warning" showIcon message="Действие нельзя отменить." style={{ marginBottom:12 }}/>
+        <Alert type="warning" showIcon message="Действие нельзя отменить. Протокол сохранится в системе со статусом «Аннулирован» и указанной причиной." style={{ marginBottom:12 }}/>
         <Input.TextArea rows={3} value={cancelReason} onChange={e=>setCancelReason(e.target.value)} placeholder="Причина..."/>
+      </Modal>
+
+      <Modal title={<span style={{ color:"#cf1322" }}><DeleteOutlined/> Удаление черновика</span>}
+        open={deleteModal}
+        onOk={() => { onDelete?.(prot.id); }}
+        onCancel={() => setDeleteModal(false)}
+        okText="Удалить" okButtonProps={{ danger:true }}>
+        <Alert type="warning" showIcon
+          message="Действие необратимо."
+          description="Черновик будет удалён без возможности восстановления. Удаление доступно только в статусе «Черновик», так как в нём ещё нет ни одного введённого фактического значения измерений. Для протоколов на более поздних этапах используйте «Аннулирование»."
+          style={{ marginBottom:4 }}/>
       </Modal>
 
       <Modal title={canOverride ? "Переопределение статуса строки" : "Указать статус (норматив не задан)"}
